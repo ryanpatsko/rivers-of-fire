@@ -1,0 +1,27 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Ensure Git LFS is available (Amazon Linux 2/2023 build images)
+        - |
+          if command -v git-lfs >/dev/null 2>&1; then
+            echo "git-lfs already installed"
+          elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y git-lfs || dnf install -y git-lfs
+          elif command -v yum >/dev/null 2>&1; then
+            sudo yum install -y git-lfs || yum install -y git-lfs
+          fi
+        - git lfs install
+        - git lfs pull
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
