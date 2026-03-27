@@ -1,0 +1,43 @@
+:root {
+  /* Pulled from festival logo + night skyline */
+  --color-ink: #06080f;
+  --color-midnight: #0d1424;
+  --color-ember: #ff8c00;
+  --color-gold: #ffc42a;
+  --color-flame: #ff4d2e;
+  --color-chili: #c41e3a;
+  --color-cream: #fff8f0;
+  --color-muted: rgba(255, 248, 240, 0.72);
+  --font-display: 'Archivo Black', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-accent: 'Permanent Marker', cursive;
+  --radius-lg: 20px;
+  --shadow-glow: 0 0 42px rgba(255, 140, 0, 0.35);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--color-cream);
+  background: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
