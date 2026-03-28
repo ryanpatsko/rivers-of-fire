@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PartnerGrid } from './PartnerGrid'
 import {
   foodAndMoreVendors,
@@ -285,6 +285,10 @@ function EventCard({
 
 export default function App() {
   const [scrollY, setScrollY] = useState(0)
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
