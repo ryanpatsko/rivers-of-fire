@@ -284,20 +284,9 @@ function EventCard({
 }
 
 export default function App() {
-  const [scrollY, setScrollY] = useState(0)
-
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [])
-
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  const parallaxOffset = scrollY * 0.38
 
   return (
     <div className={styles.page}>
@@ -307,10 +296,7 @@ export default function App() {
       </a>
 
       <div className={styles.parallaxWrap} aria-hidden="true">
-        <div
-          className={styles.parallaxBg}
-          style={{ transform: `translateY(${parallaxOffset}px) scale(1.06)` }}
-        />
+        <div className={styles.parallaxBg} />
         <div className={styles.parallaxOverlay} />
       </div>
 

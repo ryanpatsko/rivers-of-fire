@@ -16,8 +16,9 @@
   inset: -12%;
   background-image: url('/pittsburgh-night-view.jpg');
   background-size: cover;
-  background-position: center 20%;
-  will-change: transform;
+  background-position: center top;
+  transform: scale(1.06);
+  transform-origin: center top;
 }
 
 .parallaxOverlay {
