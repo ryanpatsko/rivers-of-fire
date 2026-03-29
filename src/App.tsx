@@ -137,91 +137,52 @@ const SATURDAY_EVENTS: EventDef[] = [
   },
 ]
 
-function FestivalRecap({ src }: { src: string }) {
-  const stageRef = useRef<HTMLDivElement>(null)
+/** Muted loop behind the hero; omitted when the user prefers reduced motion. */
+function HeroBackdropVideo({ src }: { src: string }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [needsUnmuteHint, setNeedsUnmuteHint] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
 
   useEffect(() => {
-    const video = videoRef.current
-    const stage = stageRef.current
-    if (!video || !stage) return
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    const playWhenVisible = async (visible: boolean) => {
-      if (!video) return
-      if (!visible) {
-        video.pause()
-        return
-      }
-      try {
-        video.muted = false
-        await video.play()
-        setNeedsUnmuteHint(false)
-      } catch {
-        video.muted = true
-        setNeedsUnmuteHint(true)
-        try {
-          await video.play()
-        } catch {
-          setNeedsUnmuteHint(true)
-        }
-      }
-    }
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const e = entries[0]
-        if (!e) return
-        void playWhenVisible(e.isIntersecting)
-      },
-      { threshold: 0.32, rootMargin: '0px 0px -10% 0px' },
-    )
-    obs.observe(stage)
-    return () => obs.disconnect()
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => setReduceMotion(mq.matches)
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
   }, [])
 
-  const enableSound = () => {
+  useEffect(() => {
+    if (reduceMotion) return
     const v = videoRef.current
     if (!v) return
-    v.muted = false
-    setNeedsUnmuteHint(false)
-    void v.play()
-  }
+    const tryPlay = () => {
+      void v.play().catch(() => {})
+    }
+    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) tryPlay()
+    else v.addEventListener('canplay', tryPlay, { once: true })
+    return () => v.removeEventListener('canplay', tryPlay)
+  }, [reduceMotion, src])
+
+  if (reduceMotion) return null
 
   return (
-    <section className={styles.recapSection} aria-labelledby="recap-heading">
-      <SectionBgSpecks />
-      <div ref={stageRef} className={styles.recapStage}>
-        <video
-          ref={videoRef}
-          className={styles.recapVideoBg}
-          src={src}
-          playsInline
-          preload="metadata"
-          controls
-          aria-label="2025 Rivers of Fire festival recap video"
-        />
-        <div className={styles.recapScrim} aria-hidden />
-        <div className={styles.recapOverlay}>
-          <div className={styles.sectionHeader}>
-            <p className={styles.sectionKicker}>Recap video</p>
-            <h2 id="recap-heading" className={styles.sectionTitle}>
-              2025 festival recap
-            </h2>
-          </div>
-          <p className={styles.recapCaption}>Clips from the 2025 event at Velum Fermentation.</p>
-          {needsUnmuteHint ? (
-            <button type="button" className={styles.recapUnmute} onClick={enableSound}>
-              Turn sound on
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </section>
+    <div className={styles.heroVideoLayer} aria-hidden="true">
+      <video
+        ref={videoRef}
+        className={styles.heroVideo}
+        src={src}
+        muted
+        loop
+        playsInline
+        autoPlay
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <div className={styles.heroVideoScrim} />
+    </div>
   )
 }
 
@@ -327,6 +288,7 @@ export default function App() {
 
       <div className={styles.content}>
         <header className={styles.hero}>
+          <HeroBackdropVideo src={RECAP_VIDEO_SRC} />
           <div className={styles.heroEmbers} aria-hidden="true">
             {Array.from({ length: 12 }, (_, i) => (
               <span key={i} className={styles.heroEmber} />
@@ -346,39 +308,39 @@ export default function App() {
               height={700}
               decoding="async"
             />
-            <p className={styles.eyebrow}>{FESTIVAL.weekendRange}</p>
-            <h1 className={styles.titleLine}>{FESTIVAL.name}</h1>
-            <p className={styles.subtitle}>{FESTIVAL.tagline}</p>
-            <div className={styles.meta}>
-              <span>
-                <a
-                  className={styles.inlineLink}
-                  href={VELUM_MAPS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Velum Fermentation
-                </a>
-                <span aria-hidden="true"> · </span>
-                <span>{FESTIVAL.venueArea}</span>
-              </span>
-            </div>
-            <p className={styles.meta} style={{ marginTop: '0.5rem' }}>
-              <span>{FESTIVAL.fridayWhen}</span>
-            </p>
-            <p className={styles.meta} style={{ marginTop: '0.35rem' }}>
-              <span>{FESTIVAL.saturdayWhen}</span>
-            </p>
+            <div className={styles.heroPanel}>
+              <p className={styles.eyebrow}>{FESTIVAL.weekendRange}</p>
+              <h1 className={styles.titleLine}>{FESTIVAL.name}</h1>
+              <p className={styles.subtitle}>{FESTIVAL.tagline}</p>
+              <div className={styles.meta}>
+                <span>
+                  <a
+                    className={styles.inlineLink}
+                    href={VELUM_MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Velum Fermentation
+                  </a>
+                  <span aria-hidden="true"> · </span>
+                  <span>{FESTIVAL.venueArea}</span>
+                </span>
+              </div>
+              <p className={styles.meta} style={{ marginTop: '0.5rem' }}>
+                <span>{FESTIVAL.fridayWhen}</span>
+              </p>
+              <p className={styles.meta} style={{ marginTop: '0.35rem' }}>
+                <span>{FESTIVAL.saturdayWhen}</span>
+              </p>
 
-            <div className={styles.ctaRow}>
-              <a className={styles.ctaPrimary} href={TICKET_URL}>
-                <span className={styles.ctaLabel}>Buy tickets</span>
-              </a>
+              <div className={styles.ctaRow}>
+                <a className={styles.ctaPrimary} href={TICKET_URL}>
+                  <span className={styles.ctaLabel}>Buy tickets</span>
+                </a>
+              </div>
             </div>
           </div>
         </header>
-
-        <FestivalRecap src={RECAP_VIDEO_SRC} />
 
         <main id="main">
           <section className={styles.section} aria-labelledby="events-heading">
@@ -533,7 +495,7 @@ export default function App() {
           />
           <p className={styles.footerCopy}>
             Pittsburgh&apos;s Rivers of Fire is organized by{' '}
-            <a href="https://www.hammajack.com/" style={{ color: 'var(--color-gold)' }}>
+            <a href="https://www.hammajack.com/" style={{ color: 'var(--color-gold-bright)' }}>
               Hammajack Heat Co.
             </a>
             .
