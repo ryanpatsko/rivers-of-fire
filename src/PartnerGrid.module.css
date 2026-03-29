@@ -47,10 +47,10 @@
   padding: 1rem 0.75rem 1.1rem;
   border-radius: 14px;
   text-decoration: none;
-  color: inherit;
-  background: rgba(6, 8, 15, 0.45);
-  border: 1px solid rgba(255, 196, 42, 0.1);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  color: var(--color-ink);
+  background: #fff;
+  border: 1px solid rgba(6, 8, 15, 0.1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   animation-name: vendorOrbitKeyframe;
   animation-duration: var(--vendor-border-dur);
   animation-timing-function: linear;
@@ -69,19 +69,19 @@
   box-sizing: border-box;
   background: conic-gradient(
     from var(--vendor-orbit),
-    rgba(255, 196, 42, 0.95),
-    rgba(255, 77, 46, 0.55),
-    rgba(255, 200, 96, 0.4),
-    rgba(255, 120, 40, 0.75),
-    rgba(255, 60, 20, 0.45),
-    rgba(255, 196, 42, 0.95)
+    rgba(255, 170, 40, 0.88),
+    rgba(255, 100, 48, 0.55),
+    rgba(255, 196, 42, 0.5),
+    rgba(255, 130, 50, 0.62),
+    rgba(220, 60, 30, 0.4),
+    rgba(255, 170, 40, 0.88)
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
-  filter: drop-shadow(0 0 10px rgba(255, 130, 40, 0.25));
+  filter: drop-shadow(0 0 6px rgba(255, 130, 40, 0.18));
 }
 
 .card::after,
@@ -93,9 +93,9 @@
   border-radius: 14px;
   background: radial-gradient(
     ellipse 130% 90% at 50% 0%,
-    rgba(255, 170, 70, 0.22) 0%,
-    rgba(255, 90, 40, 0.08) 45%,
-    transparent 70%
+    rgba(255, 140, 60, 0.12) 0%,
+    rgba(255, 196, 42, 0.06) 48%,
+    transparent 72%
   );
   opacity: 0;
   pointer-events: none;
@@ -134,7 +134,7 @@
   width: auto;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.12));
 }
 
 .name {
@@ -144,7 +144,7 @@
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.35;
-  color: var(--color-cream);
+  color: var(--color-ink);
 }
 
 .logoPlaceholder {
@@ -154,7 +154,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 248, 240, 0.38);
+  color: rgba(6, 8, 15, 0.42);
   line-height: 1.2;
   max-width: 7rem;
 }
