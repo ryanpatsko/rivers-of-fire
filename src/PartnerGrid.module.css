@@ -51,7 +51,6 @@
   background: rgba(6, 8, 15, 0.45);
   border: 1px solid rgba(255, 196, 42, 0.1);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   animation-name: vendorOrbitKeyframe;
   animation-duration: var(--vendor-border-dur);
   animation-timing-function: linear;
@@ -85,10 +84,27 @@
   filter: drop-shadow(0 0 10px rgba(255, 130, 40, 0.25));
 }
 
-.card:hover {
-  border-color: rgba(255, 140, 0, 0.35);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 28px rgba(255, 120, 40, 0.18);
+.card::after,
+.cardStatic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 14px;
+  background: radial-gradient(
+    ellipse 130% 90% at 50% 0%,
+    rgba(255, 170, 70, 0.22) 0%,
+    rgba(255, 90, 40, 0.08) 45%,
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover::after,
+.cardStatic:hover::after {
+  opacity: 1;
 }
 
 .card:focus-visible {
@@ -96,8 +112,8 @@
   outline-offset: 3px;
 }
 
-.cardStatic:hover {
-  border-color: rgba(255, 196, 42, 0.22);
+.card:focus-visible::after {
+  opacity: 1;
 }
 
 .logoWrap {
@@ -129,12 +145,6 @@
   font-weight: 600;
   line-height: 1.35;
   color: var(--color-cream);
-  transition: color 0.15s ease;
-}
-
-.card:hover .name,
-.card:focus-visible .name {
-  color: var(--color-gold);
 }
 
 .logoPlaceholder {
@@ -164,5 +174,10 @@
       rgba(255, 77, 46, 0.35),
       rgba(255, 196, 42, 0.38)
     );
+  }
+
+  .card::after,
+  .cardStatic::after {
+    transition: none;
   }
 }

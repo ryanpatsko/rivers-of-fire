@@ -16,19 +16,21 @@ export type Partner = {
   websiteUrl?: string
 }
 
-const P = (id: string, name: string): Partner => ({ id, name })
+const P = (id: string, name: string, websiteUrl?: string): Partner =>
+  websiteUrl ? { id, name, websiteUrl } : { id, name }
 
 /** File name exactly as in `assets/vendor-logos/` (spaces OK — path is encoded). */
-const L = (id: string, name: string, logoFile: string): Partner => ({
+const L = (id: string, name: string, logoFile: string, websiteUrl?: string): Partner => ({
   id,
   name,
   logoSrc: `/vendor-logos/${encodeURIComponent(logoFile)}`,
+  ...(websiteUrl ? { websiteUrl } : {}),
 })
 
 export const hotSauceVendors: Partner[] = [
-  L('hammajack', 'Hammajack', 'hammajack-logo.jpg'),
-  L('maestros', "Maestro's", 'maestros_logo.png'),
-  P('scorch-garden', 'Scorch Garden'),
+  L('hammajack', 'Hammajack', 'hammajack-logo.jpg', 'https://www.hammajack.com'),
+  L('maestros', "Maestro's", 'maestros_logo.png', 'https://www.maestrosauceco.com'),
+  P('scorch-garden', 'Scorch Garden', 'https://www.scorchgarden.com'),
   L('two-ugly-mugs', 'Two Ugly Mugs', '2UglyMugs logo.jpg'),
   L('ajuanas-gourmet-hot-sauce', "Ajuana's Gourmet Hot Sauce", 'Ajuanas logo.png'),
   P('pepper-boy-pepper-co', 'Pepper Boy Pepper Co.'),
