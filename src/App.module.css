@@ -1065,6 +1065,16 @@ main > section:first-of-type {
   color: var(--color-muted);
 }
 
+.eventJump {
+  margin: 0.7rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.sectionScrollTarget {
+  scroll-margin-top: 1.25rem;
+}
+
 .eventBadgeRow {
   display: flex;
   flex-wrap: wrap;
@@ -1121,6 +1131,20 @@ main > section:first-of-type {
   composes: panel;
   padding: 2.5rem 1.75rem;
   text-align: center;
+}
+
+.vendorSubgroupTitle {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  font-style: italic;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-cream);
+}
+
+.vendorStrip .vendorSubgroupTitle:not(:first-child) {
+  margin-top: 2.25rem;
 }
 
 .footer {

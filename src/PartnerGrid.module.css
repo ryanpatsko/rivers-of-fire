@@ -1,3 +1,15 @@
+@property --vendor-orbit {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@keyframes vendorOrbitKeyframe {
+  to {
+    --vendor-orbit: 360deg;
+  }
+}
+
 .empty {
   margin: 0;
   font-size: 0.98rem;
@@ -21,7 +33,12 @@
   }
 }
 
-.card {
+.card,
+.cardStatic {
+  --vendor-border-dur: 5.5s;
+  --vendor-border-delay: 0s;
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,15 +49,46 @@
   text-decoration: none;
   color: inherit;
   background: rgba(6, 8, 15, 0.45);
-  border: 1px solid rgba(255, 196, 42, 0.12);
+  border: 1px solid rgba(255, 196, 42, 0.1);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  animation-name: vendorOrbitKeyframe;
+  animation-duration: var(--vendor-border-dur);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: var(--vendor-border-delay);
+}
+
+.card::before,
+.cardStatic::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: 0;
+  border-radius: 16px;
+  padding: 2px;
+  box-sizing: border-box;
+  background: conic-gradient(
+    from var(--vendor-orbit),
+    rgba(255, 196, 42, 0.95),
+    rgba(255, 77, 46, 0.55),
+    rgba(255, 200, 96, 0.4),
+    rgba(255, 120, 40, 0.75),
+    rgba(255, 60, 20, 0.45),
+    rgba(255, 196, 42, 0.95)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(255, 130, 40, 0.25));
 }
 
 .card:hover {
-  border-color: rgba(255, 140, 0, 0.4);
+  border-color: rgba(255, 140, 0, 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 28px rgba(255, 120, 40, 0.18);
 }
 
 .card:focus-visible {
@@ -48,7 +96,13 @@
   outline-offset: 3px;
 }
 
+.cardStatic:hover {
+  border-color: rgba(255, 196, 42, 0.22);
+}
+
 .logoWrap {
+  position: relative;
+  z-index: 1;
   width: 100%;
   min-height: 72px;
   max-height: 88px;
@@ -68,6 +122,8 @@
 }
 
 .name {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-body);
   font-size: 0.82rem;
   font-weight: 600;
@@ -79,4 +135,34 @@
 .card:hover .name,
 .card:focus-visible .name {
   color: var(--color-gold);
+}
+
+.logoPlaceholder {
+  position: relative;
+  z-index: 1;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 240, 0.38);
+  line-height: 1.2;
+  max-width: 7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardStatic {
+    animation: none;
+  }
+
+  .card::before,
+  .cardStatic::before {
+    filter: none;
+    background: linear-gradient(
+      125deg,
+      rgba(255, 196, 42, 0.45),
+      rgba(255, 77, 46, 0.35),
+      rgba(255, 196, 42, 0.38)
+    );
+  }
 }

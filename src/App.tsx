@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PartnerGrid } from './PartnerGrid'
 import {
-  foodAndMoreVendors,
+  foodTruckVendors,
   hotSauceVendors,
+  otherVendors,
   sponsors2026,
 } from './partnersData'
 import { ScrollScoville } from './ScrollScoville'
@@ -34,6 +35,9 @@ type EventDef = {
   title: string
   description: string
   badge?: 'maybe' | 'both-days'
+  /** In-page section id (no `#`) for smooth scroll from the card */
+  jumpToSectionId?: string
+  jumpLinkLabel?: string
 }
 
 function SectionBgSpecks({ count = 16 }: { count?: number }) {
@@ -51,25 +55,25 @@ const FRIDAY_EVENTS: EventDef[] = [
     icon: '🛍️',
     title: 'Crafters & makers',
     description:
-      'Friday night is free: browse handmade goods from local crafters. No hot sauce vendor sales this evening - just a relaxed on-ramp to the weekend.',
+      'Friday night is free. Browse handmade goods from local makers. Hot sauce vendors are not selling bottles this evening.',
   },
   {
     icon: '🧠',
     title: 'Trivia',
-    description: 'Bring a team (or roll solo) for a pepper-powered trivia throwdown to kick things off.',
+    description: 'Team or solo trivia on the festival floor—details and timing to be announced.',
   },
   {
     icon: '🚐',
     title: 'Pepper-themed mobile escape room',
     description:
-      'A traveling escape experience with a spicy twist - solve your way out before the main event heats up.',
+      'A traveling escape room with a pepper theme, on site Friday and Saturday.',
     badge: 'both-days',
   },
   {
     icon: '🗳️',
     title: 'Hot sauce people’s choice',
     description:
-      'We may open voting Friday night for favorite sauces, with winners announced Saturday - and polls staying open through about the first two hours of the fest.',
+      'Voting may open Friday night for favorite sauces, with winners announced Saturday. If it runs, polls would stay open through roughly the first two hours Saturday.',
     badge: 'maybe',
   },
 ]
@@ -79,28 +83,32 @@ const SATURDAY_EVENTS: EventDef[] = [
     icon: '🌶️',
     title: 'Hot sauce vendors',
     description:
-      'Local and not-so-local small-batch makers pouring samples and selling bottles - same energy as year one, bigger footprint.',
+      'Small-batch makers sampling and selling bottles—local and visiting brands, larger layout than year one.',
+    jumpToSectionId: 'hot-sauce-vendors-heading',
+    jumpLinkLabel: 'View hot sauce vendor lineup',
   },
   {
     icon: '🔥',
     title: 'League of Fire pepper contest',
-    description: 'The headline eat-off: seasoned chomp champs and brave newcomers face the heat.',
+    description: 'The main eating competition: experienced competitors and newcomers take on the League of Fire format.',
   },
   {
     icon: '🌮',
     title: 'Food vendors',
-    description: 'Plates built to pair with serious sauce - from snacks to full-on festival fuel.',
+    description: 'Food trucks and stands with snacks and full plates—see the roster below.',
+    jumpToSectionId: 'food-trucks-heading',
+    jumpLinkLabel: 'View food trucks & more on the roster',
   },
   {
     icon: '🎙️',
     title: 'Pittsburgh Hot Talk',
     description:
-      'Our Steel City spin on Hot Ones - local guests, ten sauces, zero chill.',
+      'A Hot Ones–style interview: Pittsburgh guests and a lineup of sauces, hosted at the fest.',
   },
   {
     icon: '🔍',
     title: 'Scavenger hunt',
-    description: 'Hunt clues, hit checkpoints, and chase bragging rights (and perks) across the venue.',
+    description: 'Clues and checkpoints around the venue; finish for prizes or perks (details at the event).',
   },
   {
     icon: '🎪',
@@ -112,23 +120,17 @@ const SATURDAY_EVENTS: EventDef[] = [
     icon: '❄️',
     title: 'Fire & ice challenge with Nervana',
     description:
-      'Cool off in an ice bath or go full fire-then-ice to double the donation - Nervana Health (the crew formerly known as Pittsburgh Tub Club) powers the chill side, supporting Animal Friends for Veterans.',
+      'Optional ice bath or a fire-then-ice sequence to increase the donation. Run with Nervana Health (formerly Pittsburgh Tub Club); proceeds support Animal Friends for Veterans.',
   },
   {
     icon: '🎮',
     title: 'DJ & games',
-    description: 'Pinball loft, pool, air hockey, and a DJ when you need to pace the burn.',
+    description: 'Pinball loft, pool, air hockey, and a DJ on the schedule.',
   },
   {
     icon: '🍗',
     title: '10-wing challenge',
-    description: 'Ten steps of rising heat - grab the add-on when tickets go live.',
-  },
-  {
-    icon: '✨',
-    title: '…and Lisa’s “I’m forgetting something” list',
-    description:
-      'If it slapped last year, it’s probably back - plus a few surprises we’ll announce as the schedule locks.',
+    description: 'Ten wings, increasing heat—available as a ticket add-on when sales open.',
   },
 ]
 
@@ -279,6 +281,13 @@ function EventCard({
         </div>
       )}
       <p className={styles.eventBody}>{event.description}</p>
+      {event.jumpToSectionId && event.jumpLinkLabel ? (
+        <p className={styles.eventJump}>
+          <a className={styles.inlineLink} href={`#${event.jumpToSectionId}`}>
+            {event.jumpLinkLabel}
+          </a>
+        </p>
+      ) : null}
     </article>
   )
 }
@@ -428,12 +437,15 @@ export default function App() {
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
               <p className={styles.sectionKicker}>On the hot side</p>
-              <h2 id="hot-sauce-vendors-heading" className={styles.sectionTitle}>
+              <h2
+                id="hot-sauce-vendors-heading"
+                className={`${styles.sectionTitle} ${styles.sectionScrollTarget}`}
+              >
                 Hot sauce vendors
               </h2>
               <p className={styles.sectionLead}>
-                Small-batch makers pouring samples and selling bottles - logos and links go live here as Lisa
-                locks the 2026 roster.
+                Small-batch makers pouring samples and selling bottles. Logos and vendor links will go live
+                here as Lisa finalizes assets.
               </p>
             </div>
             <div className={styles.vendorStrip}>
@@ -452,15 +464,20 @@ export default function App() {
                 Food, drinks &amp; more
               </h2>
               <p className={styles.sectionLead}>
-                Street eats, sweets, sips, and everything else that pairs with heat - same drill: we will plug
-                in names, sites, and art as soon as we have them.
+                Street eats, sweets, sips, and everything else that pairs with heat. Logos and links go live
+                here as Lisa locks details.
               </p>
             </div>
             <div className={styles.vendorStrip}>
-              <PartnerGrid
-                partners={foodAndMoreVendors}
-                emptyMessage="More vendors to be announced."
-              />
+              <h3 className={styles.vendorSubgroupTitle}>Other vendors</h3>
+              <PartnerGrid partners={otherVendors} emptyMessage="More vendors to be announced." />
+              <h3
+                id="food-trucks-heading"
+                className={`${styles.vendorSubgroupTitle} ${styles.sectionScrollTarget}`}
+              >
+                Food trucks
+              </h3>
+              <PartnerGrid partners={foodTruckVendors} emptyMessage="Food trucks to be announced." />
             </div>
           </section>
 
