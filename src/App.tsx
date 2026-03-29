@@ -17,13 +17,16 @@ const INSTAGRAM_URL = 'https://www.instagram.com/pittsburghs.rivers.of.fire'
 const FACEBOOK_URL =
   'https://www.facebook.com/people/Pittsburghs-Rivers-of-Fire/61575970932862/'
 
+const VELUM_MAPS_URL =
+  'https://www.google.com/maps/place/Velum+Fermentation/@40.4265323,-79.9757429,733m/data=!3m2!1e3!4b1!4m6!3m5!1s0x8834f19fe6a3938f:0x34e23bf02f4ee44b!8m2!3d40.4265323!4d-79.9757429!16s%2Fg%2F11sb0v_d3f'
+
 /** Served from `/assets` via Vite `publicDir` (see `vite.config.ts`). Filename matches Lisa’s export. */
 const RECAP_VIDEO_SRC = '/rivers_of_file_festival_recap_2025.mp4'
 
 const FESTIVAL = {
   name: "Pittsburgh's Rivers of Fire",
-  tagline: "Pittsburgh's First Ever Hot Sauce Festival - Year Two",
-  venue: 'Velum Fermentation · South Side',
+  tagline: 'Second annual hot sauce festival',
+  venueArea: 'South Side',
   /** Friday before first Saturday in Oct (mirrors 2025 weekend). */
   weekendRange: 'October 2-3, 2026',
   fridayWhen: 'Friday, October 2 - free preview · evening · time TBD',
@@ -85,7 +88,7 @@ const SATURDAY_EVENTS: EventDef[] = [
     description:
       'Small-batch makers sampling and selling bottles—local and visiting brands, larger layout than year one.',
     jumpToSectionId: 'hot-sauce-vendors-heading',
-    jumpLinkLabel: 'View hot sauce vendor lineup',
+    jumpLinkLabel: 'View hot sauce vendors',
   },
   {
     icon: '🔥',
@@ -97,7 +100,7 @@ const SATURDAY_EVENTS: EventDef[] = [
     title: 'Food vendors',
     description: 'Food trucks and stands with snacks and full plates—see the roster below.',
     jumpToSectionId: 'food-trucks-heading',
-    jumpLinkLabel: 'View food trucks & more on the roster',
+    jumpLinkLabel: 'View food trucks and other vendors',
   },
   {
     icon: '🎙️',
@@ -205,12 +208,12 @@ function FestivalRecap({ src }: { src: string }) {
         <div className={styles.recapScrim} aria-hidden />
         <div className={styles.recapOverlay}>
           <div className={styles.sectionHeader}>
-            <p className={styles.sectionKicker}>See it for yourself</p>
+            <p className={styles.sectionKicker}>Recap video</p>
             <h2 id="recap-heading" className={styles.sectionTitle}>
               2025 festival recap
             </h2>
           </div>
-          <p className={styles.recapCaption}>Highlights from our first year at Velum.</p>
+          <p className={styles.recapCaption}>Clips from the 2025 event at Velum Fermentation.</p>
           {needsUnmuteHint ? (
             <button type="button" className={styles.recapUnmute} onClick={enableSound}>
               Turn sound on
@@ -343,15 +346,22 @@ export default function App() {
               height={700}
               decoding="async"
             />
-            <p className={styles.eyebrow}>The Steel City turns up the heat</p>
+            <p className={styles.eyebrow}>{FESTIVAL.weekendRange}</p>
             <h1 className={styles.titleLine}>{FESTIVAL.name}</h1>
             <p className={styles.subtitle}>{FESTIVAL.tagline}</p>
             <div className={styles.meta}>
-              <span>{FESTIVAL.weekendRange}</span>
-              <span className={styles.metaDot} aria-hidden="true">
-                ·
+              <span>
+                <a
+                  className={styles.inlineLink}
+                  href={VELUM_MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Velum Fermentation
+                </a>
+                <span aria-hidden="true"> · </span>
+                <span>{FESTIVAL.venueArea}</span>
               </span>
-              <span>{FESTIVAL.venue}</span>
             </div>
             <p className={styles.meta} style={{ marginTop: '0.5rem' }}>
               <span>{FESTIVAL.fridayWhen}</span>
@@ -374,14 +384,14 @@ export default function App() {
           <section className={styles.section} aria-labelledby="events-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
-              <p className={styles.sectionKicker}>What’s on deck for 2026</p>
+              <p className={styles.sectionKicker}>2026 schedule</p>
               <h2 id="events-heading" className={styles.sectionTitle}>
-                Everything you loved - plus preview night
+                2025 lineup returns, plus Friday preview
               </h2>
               <p className={styles.sectionLead}>
-                We’re repeating the full 2025 lineup and layering in more: a free Friday kickoff, Nervana
-                Health alongside the Fire &amp; Ice challenge, Iron City Circus Arts fire &amp; aerial, the
-                scavenger hunt, and a pepper-themed escape room on site both nights.
+                The 2025 program is back with additions: a free Friday preview, Nervana Health with the
+                fire-and-ice challenge, Iron City Circus Arts (fire and aerial), the scavenger hunt, and a
+                pepper-themed escape room on both nights.
               </p>
               <p className={styles.sectionLead}>
                 <a
@@ -390,7 +400,7 @@ export default function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Follow us on Instagram for the latest updates
+                  Schedule and announcements on Instagram
                 </a>
                 .
               </p>
@@ -399,8 +409,8 @@ export default function App() {
             <div className={styles.dayBlock}>
               <h3 className={styles.dayHeading}>Friday - free preview</h3>
               <p className={styles.daySub}>
-                No hot sauce booths selling bottles this night - think crafters, trivia, and the roaming
-                escape room as the festival floor opens early.
+                No hot sauce bottle sales this night. Expect crafters, trivia, and the mobile escape room
+                while the floor opens for the weekend.
               </p>
               <div className={styles.eventsGrid}>
                 {FRIDAY_EVENTS.map((event, i) => (
@@ -417,8 +427,8 @@ export default function App() {
             <div className={styles.dayBlock}>
               <h3 className={styles.dayHeading}>Saturday - main event</h3>
               <p className={styles.daySub}>
-                The pepper escape room stays open, vendors crank up, and contests &amp; entertainment run
-                from VIP early access through the close.
+                The escape room stays open, vendors sell and sample, and contests and entertainment run from
+                VIP early access through closing.
               </p>
               <div className={styles.eventsGrid}>
                 {SATURDAY_EVENTS.map((event, i) => (
@@ -436,7 +446,7 @@ export default function App() {
           <section className={styles.sectionNarrow} aria-labelledby="hot-sauce-vendors-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
-              <p className={styles.sectionKicker}>On the hot side</p>
+              <p className={styles.sectionKicker}>Hot sauce</p>
               <h2
                 id="hot-sauce-vendors-heading"
                 className={`${styles.sectionTitle} ${styles.sectionScrollTarget}`}
@@ -444,14 +454,13 @@ export default function App() {
                 Hot sauce vendors
               </h2>
               <p className={styles.sectionLead}>
-                Small-batch makers pouring samples and selling bottles. Logos and vendor links will go live
-                here as Lisa finalizes assets.
+                Small-batch makers sampling and selling bottles.
               </p>
             </div>
             <div className={styles.vendorStrip}>
               <PartnerGrid
                 partners={hotSauceVendors}
-                emptyMessage="2026 hot sauce lineup coming soon."
+                emptyMessage="Hot sauce vendor list not published yet."
               />
             </div>
           </section>
@@ -459,44 +468,40 @@ export default function App() {
           <section className={styles.sectionNarrow} aria-labelledby="food-more-vendors-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
-              <p className={styles.sectionKicker}>Fuel the fest</p>
+              <p className={styles.sectionKicker}>Food and drink</p>
               <h2 id="food-more-vendors-heading" className={styles.sectionTitle}>
                 Food, drinks &amp; more
               </h2>
               <p className={styles.sectionLead}>
-                Street eats, sweets, sips, and everything else that pairs with heat. Logos and links go live
-                here as Lisa locks details.
+                Food trucks, snacks, drinks, and other vendors.
               </p>
             </div>
             <div className={styles.vendorStrip}>
               <h3 className={styles.vendorSubgroupTitle}>Other vendors</h3>
-              <PartnerGrid partners={otherVendors} emptyMessage="More vendors to be announced." />
+              <PartnerGrid partners={otherVendors} emptyMessage="Vendor list not published yet." />
               <h3
                 id="food-trucks-heading"
                 className={`${styles.vendorSubgroupTitle} ${styles.sectionScrollTarget}`}
               >
                 Food trucks
               </h3>
-              <PartnerGrid partners={foodTruckVendors} emptyMessage="Food trucks to be announced." />
+              <PartnerGrid partners={foodTruckVendors} emptyMessage="Food truck list not published yet." />
             </div>
           </section>
 
           <section className={styles.sectionNarrow} aria-labelledby="sponsors-2026-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
-              <p className={styles.sectionKicker}>With thanks</p>
+              <p className={styles.sectionKicker}>Sponsors</p>
               <h2 id="sponsors-2026-heading" className={styles.sectionTitle}>
                 2026 sponsors
               </h2>
-              <p className={styles.sectionLead}>
-                The brands and businesses helping Rivers of Fire come back hotter - sponsor logos and links
-                will appear here.
-              </p>
+              <p className={styles.sectionLead}>Businesses supporting the 2026 festival.</p>
             </div>
             <div className={styles.vendorStrip}>
               <PartnerGrid
                 partners={sponsors2026}
-                emptyMessage="Sponsors for 2026 coming soon."
+                emptyMessage="2026 sponsors not listed yet."
               />
             </div>
           </section>
@@ -504,9 +509,10 @@ export default function App() {
           <section className={styles.sectionNarrow} style={{ paddingBottom: '2rem' }}>
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Ready when you are</h2>
+              <h2 className={styles.sectionTitle}>Tickets</h2>
               <p className={styles.sectionLead}>
-                Free night Friday, full burn Saturday - round up your crew and we’ll see you at Velum.
+                Friday preview is free; Saturday is ticketed. Ticket link and pricing will be posted when
+                sales open.
               </p>
             </div>
             <div className={styles.ctaRow}>
@@ -526,7 +532,7 @@ export default function App() {
             decoding="async"
           />
           <p className={styles.footerCopy}>
-            Pittsburgh&apos;s Rivers of Fire is organized by the crew at{' '}
+            Pittsburgh&apos;s Rivers of Fire is organized by{' '}
             <a href="https://www.hammajack.com/" style={{ color: 'var(--color-gold)' }}>
               Hammajack Heat Co.
             </a>

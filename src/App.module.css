@@ -507,11 +507,11 @@
 
 .eyebrow {
   font-family: var(--font-accent);
-  font-size: clamp(1.15rem, 3.5vw, 1.45rem);
-  letter-spacing: 0.04em;
+  font-size: clamp(1.35rem, 4.2vw, 1.85rem);
+  letter-spacing: 0.03em;
   color: var(--color-gold);
   text-shadow: 0 0 24px rgba(255, 196, 42, 0.45);
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
 }
 
 .titleLine {

@@ -19,7 +19,7 @@ function PartnerCard({ p, flairIndex }: { p: Partner; flairIndex: number }) {
         {p.logoSrc ? (
           <img className={styles.logo} src={p.logoSrc} alt={p.name} decoding="async" />
         ) : (
-          <span className={styles.logoPlaceholder}>Logo soon</span>
+          <span className={styles.logoPlaceholder}>Logo to come</span>
         )}
       </div>
       <span className={styles.name}>{p.name}</span>
