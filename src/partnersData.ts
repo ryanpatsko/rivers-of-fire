@@ -30,7 +30,7 @@ const L = (id: string, name: string, logoFile: string, websiteUrl?: string): Par
 export const hotSauceVendors: Partner[] = [
   L('hammajack', 'Hammajack', 'hammajack-logo.jpg', 'https://www.hammajack.com'),
   L('maestros', "Maestro's", 'maestros_logo.png', 'https://www.maestrosauceco.com'),
-  P('scorch-garden', 'Scorch Garden', 'https://www.scorchgarden.com'),
+  L('scorch-garden', 'Scorch Garden', 'Scorch Garden logo.png', 'https://www.scorchgarden.com'),
   L('two-ugly-mugs', 'Two Ugly Mugs', '2UglyMugs logo.jpg'),
   L('ajuanas-gourmet-hot-sauce', "Ajuana's Gourmet Hot Sauce", 'Ajuanas logo.png'),
   P('pepper-boy-pepper-co', 'Pepper Boy Pepper Co.'),
