@@ -1,0 +1,261 @@
+{
+  "version": 1,
+  "vendors": [
+    {
+      "id": "hammajack",
+      "name": "Hammajack",
+      "websiteUrl": "https://www.hammajack.com",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 0
+    },
+    {
+      "id": "maestros",
+      "name": "Maestro's",
+      "websiteUrl": "https://www.maestrosauceco.com",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 1
+    },
+    {
+      "id": "scorch-garden",
+      "name": "Scorch Garden",
+      "websiteUrl": "https://www.scorchgarden.com",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 2
+    },
+    {
+      "id": "two-ugly-mugs",
+      "name": "Two Ugly Mugs",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 3
+    },
+    {
+      "id": "ajuanas-gourmet-hot-sauce",
+      "name": "Ajuana's Gourmet Hot Sauce",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 4
+    },
+    {
+      "id": "pepper-boy-pepper-co",
+      "name": "Pepper Boy Pepper Co.",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 5
+    },
+    {
+      "id": "uncle-jammies",
+      "name": "Uncle Jammies",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 6
+    },
+    {
+      "id": "sonny-rose-ranch",
+      "name": "Sonny Rose Ranch",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 7
+    },
+    {
+      "id": "apoidea-apiary",
+      "name": "Apoidea Apiary",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 8
+    },
+    {
+      "id": "is-it-spicy",
+      "name": "Is It Spicy?",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 9
+    },
+    {
+      "id": "tinkertown-provisions",
+      "name": "Tinkertown Provisions",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 10
+    },
+    {
+      "id": "masterdon",
+      "name": "Masterdon",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 11
+    },
+    {
+      "id": "tannenbaum-hot-sauce",
+      "name": "Tannenbaum Hot Sauce",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 12
+    },
+    {
+      "id": "m-m-pickles",
+      "name": "M&M Pickles",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 13
+    },
+    {
+      "id": "lendoras-hot-sauce",
+      "name": "Lendora's Hot Sauce",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 14
+    },
+    {
+      "id": "black-eyed-susan-spice-company",
+      "name": "Black Eyed Susan Spice Company",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 15
+    },
+    {
+      "id": "backroads-pepper-co",
+      "name": "Backroads Pepper Co",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 16
+    },
+    {
+      "id": "sizzle",
+      "name": "Sizzle",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 17
+    },
+    {
+      "id": "lees-homemade",
+      "name": "Lee's Homemade",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 18
+    },
+    {
+      "id": "revolutionary-hot-sauce",
+      "name": "Revolutionary Hot Sauce",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 19
+    },
+    {
+      "id": "beast-spice",
+      "name": "Beast Spice",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 20
+    },
+    {
+      "id": "beans-hot-sauce-co",
+      "name": "Beans Hot Sauce Co.",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "hotSauce",
+      "sortOrder": 21
+    },
+    {
+      "id": "elfinwild-farms-beef-jerky",
+      "name": "Elfinwild Farms Beef Jerky",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 0
+    },
+    {
+      "id": "jackworth-gingerbeer",
+      "name": "Jackworth Gingerbeer",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 1
+    },
+    {
+      "id": "michaels-manna",
+      "name": "Michael's Manna (seasoning)",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 2
+    },
+    {
+      "id": "parkside-creamery",
+      "name": "Parkside Creamery",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 3
+    },
+    {
+      "id": "baked-true-north",
+      "name": "Baked True North",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 4
+    },
+    {
+      "id": "pgh-dumplingz",
+      "name": "Pgh Dumplingz",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 5
+    },
+    {
+      "id": "forge-fried",
+      "name": "Forge Fried",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 6
+    },
+    {
+      "id": "scratch-bone-treat-co",
+      "name": "Scratch & Bone Treat Co",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "other",
+      "sortOrder": 7
+    },
+    {
+      "id": "cold-friends-kitchen",
+      "name": "Cold Friends Kitchen",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "foodTruck",
+      "sortOrder": 0
+    },
+    {
+      "id": "pgh-dumplings",
+      "name": "Pgh Dumplings",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "type": "foodTruck",
+      "sortOrder": 1
+    }
+  ]
+}

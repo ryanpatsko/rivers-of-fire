@@ -1,6 +1,6 @@
 # AWS setup (admin + CMS)
 
-The app uses **one flow everywhere**: the browser talks to your **Lambda Function URL** for sign-in, session checks, and saving CMS JSON, and it **fetches `site-content.json` over HTTPS** (S3 or another URL) for public page copy. Local `npm run dev` uses the **same** Lambda and the **same** JSON URL as production—configure that via environment variables only.
+The app uses **one flow everywhere**: the browser talks to your **Lambda Function URL** for sign-in, session checks, saving **`site-content.json`**, saving **`vendors.json`**, and **uploading vendor logos** to S3. The public site **fetches** `site-content.json` and **`vendors.json`** over HTTPS. Local `npm run dev` uses the **same** Lambda and the **same** URLs as production—configure that via environment variables only.
 
 ---
 
@@ -35,7 +35,7 @@ The app uses **one flow everywhere**: the browser talks to your **Lambda Functio
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedOrigins": [
-      "https://YOUR-AMPLIFY-APP.amplifyapp.com",
+      "https://main.YOURAPPID.amplifyapp.com",
       "http://localhost:5173"
     ],
     "ExposeHeaders": []
@@ -43,9 +43,53 @@ The app uses **one flow everywhere**: the browser talks to your **Lambda Functio
 ]
 ```
 
+Replace `main.YOURAPPID.amplifyapp.com` with the **exact** origin from **Amplify → Hosting** (copy the site URL, no trailing slash). Example shape: `https://main.dgce0c764stsu.amplifyapp.com`. **Each preview branch has a different hostname** — add every origin you use, or use `"*"` as described below. If production is not listed, the browser reports **“blocked by CORS policy”** on `fetch` to S3.
+
+For a public JSON file only, some teams use **`"AllowedOrigins": ["*"]`** so every Amplify preview URL works without editing CORS each time (still only `GET`/`HEAD`; no cookies are sent to S3 for a plain `fetch`).
+
 Remove `localhost` from `AllowedOrigins` if you never load the JSON from dev.
 
 Note the **HTTPS URL** of the object (e.g. `https://rivers-of-fire-cms.s3.us-east-1.amazonaws.com/site-content.json`). The app already defaults to that pattern in code; override with **`VITE_SITE_CONTENT_URL`** if your URL differs.
+
+### `vendors.json` and `vendor-logos/`
+
+1. Upload **`vendors.json`** to the **same bucket** (starting file: **`src/content/defaultVendors.json`** in this repo). Default key in code/Lambda: **`vendors.json`** at the bucket root.
+2. Logos are uploaded by the admin UI into **`vendor-logos/`** (prefix configurable on Lambda). Objects must be **publicly readable** if the site loads them by HTTPS URL.
+
+Extend your **bucket policy** so `GetObject` is allowed on those resources (adjust bucket name):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadSiteContent",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::rivers-of-fire-cms/site-content.json"
+    },
+    {
+      "Sid": "PublicReadVendors",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::rivers-of-fire-cms/vendors.json"
+    },
+    {
+      "Sid": "PublicReadVendorLogos",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::rivers-of-fire-cms/vendor-logos/*"
+    }
+  ]
+}
+```
+
+The same **S3 CORS** rule as above (`GET`, `HEAD` for your origins) applies to **`vendors.json`**; logo images are loaded with `<img src="…">` and do not need CORS for display.
+
+Override the public vendors URL with **`VITE_VENDORS_URL`** if it is not the default in `src/content/vendorsContent.ts`.
 
 ---
 
@@ -68,15 +112,13 @@ Note the **HTTPS URL** of the object (e.g. `https://rivers-of-fire-cms.s3.us-eas
 | `ADMIN_PASSWORD` | Yes | Shared admin password (only on Lambda, not in git). |
 | `ADMIN_SESSION_SECRET` | Yes | Long random string; used to sign JWTs (24h sessions). |
 | `CMS_S3_BUCKET` | Yes | Bucket name (e.g. `rivers-of-fire-cms`). |
-| `CMS_S3_KEY` | No | Object key; default `site-content.json`. |
+| `CMS_S3_KEY` | No | Site copy JSON key; default `site-content.json`. |
+| `CMS_S3_VENDORS_KEY` | No | Vendors roster JSON key; default `vendors.json`. |
+| `CMS_S3_VENDOR_LOGOS_PREFIX` | No | Logo prefix; default `vendor-logos/` (with or without trailing slash). |
 
 ### IAM (execution role)
 
-Attach an inline policy (or managed policy) allowing **`s3:PutObject`** (and optionally **`s3:GetObject`** for debugging) on:
-
-`arn:aws:s3:::YOUR-BUCKET-NAME/YOUR-KEY`
-
-Example:
+Attach an inline policy allowing **`s3:PutObject`** on **site content**, **vendors.json**, and **vendor logos**:
 
 ```json
 {
@@ -85,11 +127,17 @@ Example:
     {
       "Effect": "Allow",
       "Action": ["s3:PutObject"],
-      "Resource": "arn:aws:s3:::rivers-of-fire-cms/site-content.json"
+      "Resource": [
+        "arn:aws:s3:::rivers-of-fire-cms/site-content.json",
+        "arn:aws:s3:::rivers-of-fire-cms/vendors.json",
+        "arn:aws:s3:::rivers-of-fire-cms/vendor-logos/*"
+      ]
     }
   ]
 }
 ```
+
+Replace the bucket name (and keys if you changed the env vars).
 
 ### Function URL
 
@@ -106,6 +154,8 @@ The app calls:
 - `POST {origin}/login`
 - `GET {origin}/verify`
 - `PUT {origin}/site-content`
+- `PUT {origin}/vendors`
+- `POST {origin}/vendor-logo` (JSON body with base64 image; max ~5 MB file after decode)
 
 ---
 
@@ -117,6 +167,7 @@ In **App settings → Environment variables**:
 |----------|--------|
 | `VITE_ADMIN_AUTH_URL` | Same Function URL origin as above (no trailing slash). |
 | `VITE_SITE_CONTENT_URL` | Optional; only if the public JSON is not the default URL in `src/content/siteContent.ts`. |
+| `VITE_VENDORS_URL` | Optional; only if `vendors.json` is not the default URL in `src/content/vendorsContent.ts`. |
 
 Trigger a **new build** after changing these (Vite bakes them in at build time).
 
@@ -128,7 +179,7 @@ Trigger a **new build** after changing these (Vite bakes them in at build time).
 
 1. Copy **`.env.example`** → **`.env.local`** (gitignored).
 2. Set **`VITE_ADMIN_AUTH_URL`** to the **same** Lambda Function URL origin you use in Amplify.
-3. Optionally set **`VITE_SITE_CONTENT_URL`** to match production if you are not using the default S3 URL.
+3. Optionally set **`VITE_SITE_CONTENT_URL`** / **`VITE_VENDORS_URL`** to match production if you are not using the default S3 URLs.
 4. Run **`npm run dev`**.
 
 There is **no** separate local admin API or local CMS file path in this project anymore.
@@ -137,10 +188,11 @@ There is **no** separate local admin API or local CMS file path in this project 
 
 ## 5. Checklist
 
-- [ ] `site-content.json` reachable in browser from the URL the app will use; S3 CORS allows your origins.
-- [ ] Lambda env vars set; IAM allows `PutObject` on that key.
+- [ ] `site-content.json` and **`vendors.json`** reachable in browser; S3 CORS allows your origins for `fetch`.
+- [ ] Bucket policy allows public **`GetObject`** on logos under **`vendor-logos/*`** if the admin uploads logos.
+- [ ] Lambda env vars set; IAM allows **`PutObject`** on site key, **`vendors.json`**, and **`vendor-logos/*`**.
 - [ ] Function URL exists, **auth NONE**, CORS allows POST/GET/PUT + `Authorization`.
-- [ ] Amplify has `VITE_ADMIN_AUTH_URL` (and optional `VITE_SITE_CONTENT_URL`); rebuild deployed.
+- [ ] Amplify has `VITE_ADMIN_AUTH_URL` (and optional `VITE_SITE_CONTENT_URL`, **`VITE_VENDORS_URL`**); rebuild deployed.
 - [ ] `.env.local` matches Amplify for local dev.
 
 After a save, viewers may briefly see cached JSON; the Lambda sets **`Cache-Control: max-age=30`** on the uploaded object to limit staleness.

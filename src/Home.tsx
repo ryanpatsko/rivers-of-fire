@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createDefaultSiteContent, loadSiteContent } from './content/siteContent'
-import { PartnerGrid } from './PartnerGrid'
 import {
-  foodTruckVendors,
-  hotSauceVendors,
-  otherVendors,
-  sponsors2026,
-} from './partnersData'
+  createDefaultVendorsDoc,
+  loadVendors,
+  vendorsToPartners,
+} from './content/vendorsContent'
+import { PartnerGrid } from './PartnerGrid'
+import { sponsors2026 } from './partnersData'
 import { ScrollScoville } from './ScrollScoville'
 import styles from './App.module.css'
 
@@ -14,8 +14,23 @@ function CmsHtml({ html, className }: { html: string; className: string }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
+type EventIconKey =
+  | 'shop'
+  | 'question'
+  | 'puzzle'
+  | 'vote'
+  | 'pepper'
+  | 'flame'
+  | 'taco'
+  | 'mic'
+  | 'search'
+  | 'spark'
+  | 'snowflake'
+  | 'gamepad'
+  | 'wing'
+
 type EventDef = {
-  icon: string
+  icon: EventIconKey
   title: string
   description: string
   badge?: 'maybe' | 'both-days'
@@ -34,27 +49,154 @@ function SectionBgSpecks({ count = 16 }: { count?: number }) {
   )
 }
 
+function EventIcon({ icon }: { icon: EventIconKey }) {
+  // Outline-only icons so the event cards feel consistent and not "emoji-cheesy".
+  const common = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
+
+  switch (icon) {
+    case 'shop':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M4 10V20h16V10" />
+          <path {...common} d="M3 10l2-5h14l2 5" />
+          <path {...common} d="M10 20v-6h4v6" />
+        </svg>
+      )
+    case 'question':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle {...common} cx="12" cy="12" r="9" />
+          <path
+            {...common}
+            d="M9.5 9.5a2.5 2.5 0 1 1 4.2 1.8c-.8.7-1.7 1-1.7 2.2"
+          />
+          <path {...common} d="M12 17h.01" />
+        </svg>
+      )
+    case 'puzzle':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            {...common}
+            d="M8 3h3a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v3h-3a2 2 0 0 0-2 2v3H8v-3a2 2 0 0 1 2-2h1v-2H10a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+          />
+        </svg>
+      )
+    case 'vote':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M7 3h10l2 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6l2-3Z" />
+          <path {...common} d="M9 12l2 2 4-6" />
+        </svg>
+      )
+    case 'pepper':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M12 3c2 2 4 4 4 7 0 3-2 5-4 11-2-6-4-8-4-11 0-3 2-5 4-7Z" />
+          <path {...common} d="M15 6c1-1 2-2 3-2" />
+        </svg>
+      )
+    case 'flame':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          {/* More recognizable outline flame (stroke-only). */}
+          <path
+            {...common}
+            d="M12 2s4 4 4 8-2 7-4 7-4-3-4-7 4-8 4-8Z"
+          />
+          <path {...common} d="M12 9s-2 2-2 4 2 3 2 3 2-1 2-3-2-4-2-4Z" />
+        </svg>
+      )
+    case 'taco':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M4 11c0 6 16 6 16 0 0-2-2-6-8-6s-8 4-8 6Z" />
+          <path {...common} d="M5 11l1 7c0 1 1 2 2 2h8c1 0 2-1 2-2l1-7" />
+        </svg>
+      )
+    case 'mic':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" />
+          <path {...common} d="M19 11a7 7 0 0 1-14 0" />
+          <path {...common} d="M12 18v3" />
+        </svg>
+      )
+    case 'search':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle {...common} cx="11" cy="11" r="7" />
+          <path {...common} d="M20 20l-3.5-3.5" />
+        </svg>
+      )
+    case 'spark':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4L12 2Z" />
+          <path {...common} d="M20 2l.8 2.4L23 5l-2.2.6L20 8l-.8-2.4L17 5l2.2-.6L20 2Z" />
+        </svg>
+      )
+    case 'snowflake':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M12 2v20" />
+          <path {...common} d="M4.9 6.2l14.2 11.6" />
+          <path {...common} d="M19.1 6.2L4.9 17.8" />
+          <path {...common} d="M2 12h20" />
+          <path {...common} d="M7 4.5l1.5 3M17 4.5l-1.5 3M7 19.5l1.5-3M17 19.5l-1.5-3" />
+        </svg>
+      )
+    case 'gamepad':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M8 10h8a4 4 0 0 1 4 4v2H4v-2a4 4 0 0 1 4-4Z" />
+          <path {...common} d="M7 16l-2 2" />
+          <path {...common} d="M17 16l2 2" />
+          <circle {...common} cx="9.5" cy="14" r="1" />
+          <circle {...common} cx="14.5" cy="14" r="1" />
+          <path {...common} d="M10 14h4" />
+        </svg>
+      )
+    case 'wing':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path {...common} d="M20 4c-6 1-11 4-13 7-2 3-1 7 2 9 3 2 7 1 9-2 3-2 6-7 2-14Z" />
+          <path {...common} d="M7 15c2-1 4-2 7-3" />
+          <path {...common} d="M9 18c2-1 4-2 6-3" />
+        </svg>
+      )
+    default:
+      return null
+  }
+}
+
 const FRIDAY_EVENTS: EventDef[] = [
   {
-    icon: '🛍️',
+    icon: 'shop',
     title: 'Crafters & makers',
     description:
       'Friday night is free. Browse handmade goods from local makers. Hot sauce vendors are not selling bottles this evening.',
   },
   {
-    icon: '🧠',
+    icon: 'question',
     title: 'Trivia',
     description: 'Team or solo trivia on the festival floor—details and timing to be announced.',
   },
   {
-    icon: '🚐',
+    icon: 'puzzle',
     title: 'Pepper-themed mobile escape room',
     description:
       'A traveling escape room with a pepper theme, on site Friday and Saturday.',
     badge: 'both-days',
   },
   {
-    icon: '🗳️',
+    icon: 'vote',
     title: 'Hot sauce people’s choice',
     description:
       'Voting may open Friday night for favorite sauces, with winners announced Saturday. If it runs, polls would stay open through roughly the first two hours Saturday.',
@@ -64,7 +206,7 @@ const FRIDAY_EVENTS: EventDef[] = [
 
 const SATURDAY_EVENTS: EventDef[] = [
   {
-    icon: '🌶️',
+    icon: 'pepper',
     title: 'Hot sauce vendors',
     description:
       'Small-batch makers sampling and selling bottles—local and visiting brands, larger layout than year one.',
@@ -72,47 +214,47 @@ const SATURDAY_EVENTS: EventDef[] = [
     jumpLinkLabel: 'View hot sauce vendors',
   },
   {
-    icon: '🔥',
+    icon: 'flame',
     title: 'League of Fire pepper contest',
     description: 'The main eating competition: experienced competitors and newcomers take on the League of Fire format.',
   },
   {
-    icon: '🌮',
+    icon: 'taco',
     title: 'Food vendors',
     description: 'Food trucks and stands with snacks and full plates—see the roster below.',
     jumpToSectionId: 'food-trucks-heading',
     jumpLinkLabel: 'View food trucks and other vendors',
   },
   {
-    icon: '🎙️',
+    icon: 'mic',
     title: 'Pittsburgh Hot Talk',
     description:
       'A Hot Ones–style interview: Pittsburgh guests and a lineup of sauces, hosted at the fest.',
   },
   {
-    icon: '🔍',
+    icon: 'search',
     title: 'Scavenger hunt',
     description: 'Clues and checkpoints around the venue; finish for prizes or perks (details at the event).',
   },
   {
-    icon: '🎪',
+    icon: 'spark',
     title: 'Fire & aerial show',
     description:
       'Iron City Circus Arts returns with fire performance and aerial work designed to light up the night.',
   },
   {
-    icon: '❄️',
+    icon: 'snowflake',
     title: 'Fire & ice challenge with Nervana',
     description:
       'Optional ice bath or a fire-then-ice sequence to increase the donation. Run with Nervana Health (formerly Pittsburgh Tub Club); proceeds support Animal Friends for Veterans.',
   },
   {
-    icon: '🎮',
+    icon: 'gamepad',
     title: 'DJ & games',
     description: 'Pinball loft, pool, air hockey, and a DJ on the schedule.',
   },
   {
-    icon: '🍗',
+    icon: 'wing',
     title: '10-wing challenge',
     description: 'Ten wings, increasing heat—available as a ticket add-on when sales open.',
   },
@@ -211,7 +353,7 @@ function EventCard({
     >
       <div className={styles.eventHead}>
         <div className={styles.eventIcon} aria-hidden="true">
-          {event.icon}
+          <EventIcon icon={event.icon} />
         </div>
         <h3 className={styles.eventTitle}>{event.title}</h3>
       </div>
@@ -239,10 +381,19 @@ function EventCard({
 
 export default function Home() {
   const [site, setSite] = useState(createDefaultSiteContent)
+  const [vendorsDoc, setVendorsDoc] = useState(createDefaultVendorsDoc)
 
   useEffect(() => {
     void loadSiteContent().then(setSite).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    void loadVendors().then(setVendorsDoc).catch(() => {})
+  }, [])
+
+  const hotSauceVendors = vendorsToPartners(vendorsDoc.vendors, 'hotSauce')
+  const otherVendors = vendorsToPartners(vendorsDoc.vendors, 'other')
+  const foodTruckVendors = vendorsToPartners(vendorsDoc.vendors, 'foodTruck')
 
   const g = site.general
 

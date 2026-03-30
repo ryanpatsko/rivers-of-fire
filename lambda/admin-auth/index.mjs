@@ -1,19 +1,19 @@
 /**
- * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT).
+ * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT), /vendors (PUT), /vendor-logo (POST).
  *
  * Env:
- *   ADMIN_PASSWORD, ADMIN_SESSION_SECRET — same as before
+ *   ADMIN_PASSWORD, ADMIN_SESSION_SECRET
  *   CMS_S3_BUCKET — e.g. rivers-of-fire-cms
  *   CMS_S3_KEY — optional, default site-content.json
+ *   CMS_S3_VENDORS_KEY — optional, default vendors.json
+ *   CMS_S3_VENDOR_LOGOS_PREFIX — optional, default vendor-logos/ (trailing slash ok)
  *
- * IAM on the execution role: s3:PutObject on that bucket/key (and ListBucket if needed).
+ * IAM: s3:PutObject on site key, vendors key, and vendor-logos/* (and public GetObject via bucket policy for reads).
  *
- * CORS: configure **only** on the Lambda Function URL in AWS (methods, headers, origins).
- * Do not duplicate Access-Control-* headers here—Function URL CORS already injects them, and
- * returning them from this handler causes “multiple values” browser errors.
+ * CORS: configure only on the Lambda Function URL in AWS.
  */
 
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const SESSION_HOURS = 24
@@ -60,6 +60,12 @@ const GENERAL_KEYS = [
   'footerOrganizerHtml',
   'skipLinkText',
 ]
+
+const VENDOR_TYPES = new Set(['hotSauce', 'other', 'foodTruck'])
+const MAX_LOGO_BYTES = 5 * 1024 * 1024
+const LOGO_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])
+
+const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 const s3 = new S3Client({})
 
@@ -143,6 +149,26 @@ function parseBody(event) {
   return raw
 }
 
+function s3PutErrorResponse(err) {
+  console.error('PutObject failed', err)
+  const name = err?.name ?? err?.Code ?? ''
+  const msg = String(err?.message ?? '')
+  if (name === 'AccessDenied' || msg.includes('Access Denied')) {
+    return response(500, {
+      error:
+        'S3 PutObject denied. On the Lambda execution role, allow s3:PutObject on the CMS bucket keys (site content, vendors.json, vendor-logos/*).',
+    })
+  }
+  if (name === 'NoSuchBucket' || msg.includes('NoSuchBucket')) {
+    return response(500, {
+      error: 'S3 bucket not found. Check the CMS_S3_BUCKET environment variable.',
+    })
+  }
+  return response(500, {
+    error: 'S3 upload failed. Open CloudWatch → Log groups → this function → latest log stream for details.',
+  })
+}
+
 function validateSiteContent(body) {
   if (!body || typeof body !== 'object') return false
   if (typeof body.version !== 'number') return false
@@ -154,9 +180,55 @@ function validateSiteContent(body) {
   return true
 }
 
+function validateVendor(v) {
+  if (!v || typeof v !== 'object') return false
+  if (typeof v.id !== 'string' || v.id.length > 64 || !ID_RE.test(v.id)) return false
+  const name = typeof v.name === 'string' ? v.name.trim() : ''
+  if (name.length < 1 || name.length > 200) return false
+  if (typeof v.websiteUrl !== 'string' || v.websiteUrl.length > 500) return false
+  if (typeof v.logoUrl !== 'string' || v.logoUrl.length > 2048) return false
+  if (v.logoUrl && !v.logoUrl.startsWith('https://')) return false
+  if (!VENDOR_TYPES.has(v.type)) return false
+  if (typeof v.sortOrder !== 'number' || !Number.isFinite(v.sortOrder)) return false
+  return true
+}
+
+function validateVendorsDoc(body) {
+  if (!body || typeof body !== 'object') return false
+  if (typeof body.version !== 'number') return false
+  if (!Array.isArray(body.vendors) || body.vendors.length > 500) return false
+  return body.vendors.every(validateVendor)
+}
+
 function bearerToken(event) {
   const auth = headerLookup(event.headers, 'Authorization') ?? ''
   return auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+}
+
+function normalizeVendorLogosPrefix(raw) {
+  const p = (raw || 'vendor-logos/').trim()
+  return p.endsWith('/') ? p : `${p}/`
+}
+
+function sanitizeFilename(name) {
+  const base = String(name || '')
+    .split(/[/\\]/)
+    .pop()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .slice(0, 80)
+  return base || 'logo'
+}
+
+function stripDataUrlBase64(raw) {
+  const s = String(raw || '').trim()
+  const comma = s.indexOf(',')
+  if (s.startsWith('data:') && comma > 0) return s.slice(comma + 1)
+  return s
+}
+
+function publicObjectUrl(bucket, region, key) {
+  const r = region || 'us-east-1'
+  return `https://${bucket}.s3.${r}.amazonaws.com/${key.split('/').map(encodeURIComponent).join('/')}`
 }
 
 export async function handler(event) {
@@ -174,6 +246,9 @@ export async function handler(event) {
   const isVerify = method === 'GET' && (path === '/verify' || path.endsWith('/verify'))
   const isSaveContent =
     method === 'PUT' && (path === '/site-content' || path.endsWith('/site-content'))
+  const isSaveVendors = method === 'PUT' && (path === '/vendors' || path.endsWith('/vendors'))
+  const isVendorLogo =
+    method === 'POST' && (path === '/vendor-logo' || path.endsWith('/vendor-logo'))
 
   if (isLogin) {
     let password = ''
@@ -232,25 +307,110 @@ export async function handler(event) {
         }),
       )
     } catch (err) {
-      console.error('PutObject failed', err)
-      const name = err?.name ?? err?.Code ?? ''
-      const msg = String(err?.message ?? '')
-      if (name === 'AccessDenied' || msg.includes('Access Denied')) {
-        return response(500, {
-          error:
-            'S3 PutObject denied. On the Lambda execution role, allow s3:PutObject on arn:aws:s3:::YOUR_BUCKET/YOUR_KEY. Confirm CMS_S3_BUCKET matches the bucket name exactly.',
-        })
-      }
-      if (name === 'NoSuchBucket' || msg.includes('NoSuchBucket')) {
-        return response(500, {
-          error: 'S3 bucket not found. Check the CMS_S3_BUCKET environment variable.',
-        })
-      }
-      return response(500, {
-        error: 'S3 upload failed. Open CloudWatch → Log groups → this function → latest stream for details.',
-      })
+      return s3PutErrorResponse(err)
     }
     return response(200, { ok: true })
+  }
+
+  if (isSaveVendors) {
+    const token = bearerToken(event)
+    if (!token || !verifyJwt(token, sessionSecret)) {
+      return response(401, { error: 'Unauthorized' })
+    }
+    let body
+    try {
+      body = JSON.parse(parseBody(event))
+    } catch {
+      return response(400, { error: 'Invalid JSON' })
+    }
+    if (!validateVendorsDoc(body)) {
+      return response(400, { error: 'Invalid vendors document shape' })
+    }
+    const bucket = process.env.CMS_S3_BUCKET ?? ''
+    const key = process.env.CMS_S3_VENDORS_KEY || 'vendors.json'
+    if (!bucket) {
+      return response(500, { error: 'CMS_S3_BUCKET not set' })
+    }
+    const version = Math.max(1, Math.floor(body.version))
+    const normalized = {
+      version,
+      vendors: body.vendors.map((v) => ({
+        id: v.id,
+        name: String(v.name).trim(),
+        websiteUrl: String(v.websiteUrl).trim(),
+        logoUrl: String(v.logoUrl).trim(),
+        type: v.type,
+        sortOrder: Math.floor(v.sortOrder),
+      })),
+    }
+    const payload = JSON.stringify(normalized, null, 2)
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: payload,
+          ContentType: 'application/json; charset=utf-8',
+          CacheControl: 'max-age=30',
+        }),
+      )
+    } catch (err) {
+      return s3PutErrorResponse(err)
+    }
+    return response(200, { ok: true })
+  }
+
+  if (isVendorLogo) {
+    const token = bearerToken(event)
+    if (!token || !verifyJwt(token, sessionSecret)) {
+      return response(401, { error: 'Unauthorized' })
+    }
+    let parsed
+    try {
+      parsed = JSON.parse(parseBody(event))
+    } catch {
+      return response(400, { error: 'Invalid JSON' })
+    }
+    const contentType = typeof parsed.contentType === 'string' ? parsed.contentType.trim() : ''
+    const filename = sanitizeFilename(parsed.filename)
+    const dataBase64 = stripDataUrlBase64(parsed.dataBase64)
+    if (!LOGO_TYPES.has(contentType)) {
+      return response(400, { error: 'Unsupported image type' })
+    }
+    if (!dataBase64) {
+      return response(400, { error: 'Missing image data' })
+    }
+    let buf
+    try {
+      buf = Buffer.from(dataBase64, 'base64')
+    } catch {
+      return response(400, { error: 'Invalid base64 image data' })
+    }
+    if (buf.length < 16 || buf.length > MAX_LOGO_BYTES) {
+      return response(400, { error: 'Image must be under 5 MB' })
+    }
+    const bucket = process.env.CMS_S3_BUCKET ?? ''
+    if (!bucket) {
+      return response(500, { error: 'CMS_S3_BUCKET not set' })
+    }
+    const prefix = normalizeVendorLogosPrefix(process.env.CMS_S3_VENDOR_LOGOS_PREFIX)
+    const objectKey = `${prefix}${randomUUID()}-${filename}`
+    const region = process.env.AWS_REGION || 'us-east-1'
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: objectKey,
+          Body: buf,
+          ContentType: contentType,
+          CacheControl: 'max-age=86400',
+        }),
+      )
+    } catch (err) {
+      return s3PutErrorResponse(err)
+    }
+    const publicUrl = publicObjectUrl(bucket, region, objectKey)
+    return response(200, { ok: true, publicUrl, key: objectKey })
   }
 
   return response(404, { error: 'Not found' })

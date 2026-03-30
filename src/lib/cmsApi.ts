@@ -1,5 +1,19 @@
 import type { SiteContent } from '../content/siteContent'
+import type { VendorsDoc } from '../content/vendorsContent'
 import { getAdminAuthBaseUrl } from './adminAuth'
+
+async function readErrorDetail(res: Response): Promise<string> {
+  try {
+    const text = await res.text()
+    if (text) {
+      const parsed = JSON.parse(text) as { error?: string }
+      if (typeof parsed.error === 'string') return `: ${parsed.error}`
+    }
+  } catch {
+    /* ignore */
+  }
+  return ''
+}
 
 export async function saveSiteContent(
   token: string,
@@ -26,17 +40,94 @@ export async function saveSiteContent(
     }
   }
   if (!res.ok) {
-    let detail = ''
-    try {
-      const text = await res.text()
-      if (text) {
-        const parsed = JSON.parse(text) as { error?: string }
-        if (typeof parsed.error === 'string') detail = `: ${parsed.error}`
-      }
-    } catch {
-      /* ignore */
-    }
+    const detail = await readErrorDetail(res)
     return { ok: false, message: `Save failed (HTTP ${res.status}${detail}).` }
   }
   return { ok: true }
+}
+
+export async function saveVendorsContent(
+  token: string,
+  doc: VendorsDoc,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const base = getAdminAuthBaseUrl()
+  if (!base) {
+    return { ok: false, message: 'Admin API is not configured.' }
+  }
+  let res: Response
+  try {
+    res = await fetch(`${base}/vendors`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(doc),
+    })
+  } catch {
+    return {
+      ok: false,
+      message: 'Network error saving vendors. Check CORS and the Function URL.',
+    }
+  }
+  if (!res.ok) {
+    const detail = await readErrorDetail(res)
+    return { ok: false, message: `Save failed (HTTP ${res.status}${detail}).` }
+  }
+  return { ok: true }
+}
+
+const MAX_LOGO_UPLOAD_BYTES = 4.5 * 1024 * 1024
+
+export async function uploadVendorLogo(
+  token: string,
+  file: File,
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  const base = getAdminAuthBaseUrl()
+  if (!base) {
+    return { ok: false, message: 'Admin API is not configured.' }
+  }
+  if (file.size > MAX_LOGO_UPLOAD_BYTES) {
+    return { ok: false, message: 'Image must be under 4.5 MB.' }
+  }
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(String(r.result))
+    r.onerror = () => reject(new Error('read failed'))
+    r.readAsDataURL(file)
+  })
+  const comma = dataUrl.indexOf(',')
+  const dataBase64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+  const contentType = file.type || 'image/png'
+  let res: Response
+  try {
+    res = await fetch(`${base}/vendor-logo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        contentType,
+        filename: file.name || 'logo.png',
+        dataBase64,
+      }),
+    })
+  } catch {
+    return { ok: false, message: 'Network error uploading logo.' }
+  }
+  if (!res.ok) {
+    const detail = await readErrorDetail(res)
+    return { ok: false, message: `Upload failed (HTTP ${res.status}${detail}).` }
+  }
+  let parsed: { publicUrl?: string }
+  try {
+    parsed = (await res.json()) as { publicUrl?: string }
+  } catch {
+    return { ok: false, message: 'Invalid response after upload.' }
+  }
+  if (typeof parsed.publicUrl !== 'string' || !parsed.publicUrl.startsWith('https://')) {
+    return { ok: false, message: 'Server did not return a logo URL.' }
+  }
+  return { ok: true, publicUrl: parsed.publicUrl }
 }
