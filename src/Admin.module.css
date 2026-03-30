@@ -24,9 +24,25 @@
   gap: 0.75rem 1.25rem;
 }
 
-.headerTitles {
+.headerBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
   min-width: 0;
   flex: 1 1 12rem;
+}
+
+.headerLogo {
+  flex-shrink: 0;
+  width: 2.65rem;
+  height: auto;
+  max-height: 3.35rem;
+  object-fit: contain;
+  display: block;
+}
+
+.headerTitles {
+  min-width: 0;
 }
 
 .kicker {

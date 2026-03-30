@@ -195,9 +195,19 @@ export default function Admin() {
       <div className={styles.shell}>
         <header className={styles.header}>
           <div className={styles.headerTop}>
-            <div className={styles.headerTitles}>
-              <p className={styles.kicker}>Pittsburgh&apos;s Rivers of Fire</p>
-              <h1 className={styles.title}>Admin Dashboard</h1>
+            <div className={styles.headerBrand}>
+              <img
+                className={styles.headerLogo}
+                src="/Rivers-of-Fire-logo-transparent-background.png"
+                alt=""
+                width={56}
+                height={84}
+                decoding="async"
+              />
+              <div className={styles.headerTitles}>
+                <p className={styles.kicker}>Pittsburgh&apos;s Rivers of Fire</p>
+                <h1 className={styles.title}>Admin Dashboard</h1>
+              </div>
             </div>
             <nav className={styles.headerNav} aria-label="Admin actions">
               {gate === 'unlocked' ? (

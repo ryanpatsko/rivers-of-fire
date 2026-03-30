@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createDefaultSiteContent, loadSiteContent } from './content/siteContent'
 import {
   createDefaultVendorsDoc,
@@ -9,6 +9,14 @@ import { PartnerGrid } from './PartnerGrid'
 import { sponsors2026 } from './partnersData'
 import { ScrollScoville } from './ScrollScoville'
 import styles from './App.module.css'
+
+/** Floating embers across the full viewport, behind `.content` (same stack as parallax). */
+const PAGE_EMBER_SLOTS = Array.from({ length: 22 }, (_, i) => ({
+  left: 2 + (i * 96) / 21,
+  dur: 8.2 + (i % 7) * 0.55,
+  delay: (i * 0.41) % 5.2,
+  drift: i % 2 === 0 ? 26 : -22,
+}))
 
 function CmsHtml({ html, className }: { html: string; className: string }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
@@ -411,6 +419,23 @@ export default function Home() {
       <div className={styles.parallaxWrap} aria-hidden="true">
         <div className={styles.parallaxBg} />
         <div className={styles.parallaxOverlay} />
+        <div className={styles.pageEmbers}>
+          {PAGE_EMBER_SLOTS.map((s, i) => (
+            <span
+              key={`page-ember-${i}`}
+              className={styles.pageEmber}
+              style={
+                {
+                  left: `${s.left}%`,
+                  animationDuration: `${s.dur}s`,
+                  animationDelay: `${s.delay}s`,
+                  '--ember-drift': `${s.drift}`,
+                  '--ember-reduce-stagger': i,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <div className={styles.pageSideSpecks} aria-hidden="true">
