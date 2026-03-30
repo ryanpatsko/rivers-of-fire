@@ -1,0 +1,18 @@
+---
+description: After Lambda admin-auth changes, rebuild deployment zip
+globs: lambda/admin-auth/**
+alwaysApply: false
+---
+
+# Lambda deployment zip
+
+Whenever you edit anything under `lambda/admin-auth/` (including `index.mjs` or `package.json`), before finishing the task:
+
+1. Run from the repo root: `npm run package:lambda`
+2. Confirm it exits successfully and updates `dist/lambda-admin-auth.zip`
+
+That zip is what gets uploaded to AWS Lambda (handler `index.handler`). If the command fails, fix the underlying issue (e.g. `npm ci` in `lambda/admin-auth`).
+
+If you change `scripts/package-lambda.mjs`, run `npm run package:lambda` once to verify the zip still builds.
+
+Do not ask the user to run this manually unless their environment cannot run npm.

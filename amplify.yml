@@ -1,3 +1,13 @@
+# SPA: add a rewrite in Amplify Console → Hosting → Rewrites and redirects so client routes work:
+#   Source: </^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp|webmanifest)$)([^.]+$)/>
+#   Target: /index.html
+#   Type: 200 (Rewrite)
+#
+# Secrets stay off the static bundle: deploy lambda/admin-auth as a Lambda with Function URL, set
+# ADMIN_PASSWORD and ADMIN_SESSION_SECRET on the function only. In Amplify → Environment variables,
+# set VITE_ADMIN_AUTH_URL to that Function URL origin (https://....lambda-url....aws), then rebuild.
+#
+# CMS + admin: see AWS-SETUP.md (Lambda env, Function URL, S3, Amplify variables).
 version: 1
 frontend:
   phases:
