@@ -1,5 +1,5 @@
 /**
- * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT), /vendors (PUT), /vendor-logo (POST).
+ * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT), /vendors (PUT), /vendor-logo (POST), /sponsors (PUT), /sponsor-logo (POST).
  *
  * Env:
  *   ADMIN_PASSWORD, ADMIN_SESSION_SECRET
@@ -7,8 +7,10 @@
  *   CMS_S3_KEY — optional, default site-content.json
  *   CMS_S3_VENDORS_KEY — optional, default vendors.json
  *   CMS_S3_VENDOR_LOGOS_PREFIX — optional, default vendor-logos/ (trailing slash ok)
+ *   CMS_S3_SPONSORS_KEY — optional, default sponsors.json
+ *   CMS_S3_SPONSOR_LOGOS_PREFIX — optional, default sponsor-logos/ (trailing slash ok)
  *
- * IAM: s3:PutObject on site key, vendors key, and vendor-logos/* (and public GetObject via bucket policy for reads).
+ * IAM: s3:PutObject on site key, vendors/sponsors JSON, vendor-logos/*, sponsor-logos/* (and public GetObject via bucket policy for reads).
  *
  * CORS: configure only on the Lambda Function URL in AWS.
  */
@@ -66,6 +68,27 @@ const MAX_LOGO_BYTES = 5 * 1024 * 1024
 const LOGO_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])
 
 const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/** @param {unknown} v */
+function validateSponsor(v) {
+  if (!v || typeof v !== 'object') return false
+  if (typeof v.id !== 'string' || v.id.length > 64 || !ID_RE.test(v.id)) return false
+  const name = typeof v.name === 'string' ? v.name.trim() : ''
+  if (name.length < 1 || name.length > 200) return false
+  if (typeof v.websiteUrl !== 'string' || v.websiteUrl.length > 500) return false
+  if (typeof v.logoUrl !== 'string' || v.logoUrl.length > 2048) return false
+  if (v.logoUrl && !v.logoUrl.startsWith('https://')) return false
+  if (typeof v.sortOrder !== 'number' || !Number.isFinite(v.sortOrder)) return false
+  return true
+}
+
+/** @param {unknown} body */
+function validateSponsorsDoc(body) {
+  if (!body || typeof body !== 'object') return false
+  if (typeof body.version !== 'number') return false
+  if (!Array.isArray(body.sponsors) || body.sponsors.length > 500) return false
+  return body.sponsors.every(validateSponsor)
+}
 
 const s3 = new S3Client({})
 
@@ -156,7 +179,7 @@ function s3PutErrorResponse(err) {
   if (name === 'AccessDenied' || msg.includes('Access Denied')) {
     return response(500, {
       error:
-        'S3 PutObject denied. On the Lambda execution role, allow s3:PutObject on the CMS bucket keys (site content, vendors.json, vendor-logos/*).',
+        'S3 PutObject denied. On the Lambda execution role, allow s3:PutObject on the CMS bucket keys (site content, vendors.json, sponsors.json, vendor-logos/*, sponsor-logos/*).',
     })
   }
   if (name === 'NoSuchBucket' || msg.includes('NoSuchBucket')) {
@@ -210,6 +233,11 @@ function normalizeVendorLogosPrefix(raw) {
   return p.endsWith('/') ? p : `${p}/`
 }
 
+function normalizeSponsorLogosPrefix(raw) {
+  const p = (raw || 'sponsor-logos/').trim()
+  return p.endsWith('/') ? p : `${p}/`
+}
+
 function sanitizeFilename(name) {
   const base = String(name || '')
     .split(/[/\\]/)
@@ -249,6 +277,9 @@ export async function handler(event) {
   const isSaveVendors = method === 'PUT' && (path === '/vendors' || path.endsWith('/vendors'))
   const isVendorLogo =
     method === 'POST' && (path === '/vendor-logo' || path.endsWith('/vendor-logo'))
+  const isSaveSponsors = method === 'PUT' && (path === '/sponsors' || path.endsWith('/sponsors'))
+  const isSponsorLogo =
+    method === 'POST' && (path === '/sponsor-logo' || path.endsWith('/sponsor-logo'))
 
   if (isLogin) {
     let password = ''
@@ -360,6 +391,53 @@ export async function handler(event) {
     return response(200, { ok: true })
   }
 
+  if (isSaveSponsors) {
+    const token = bearerToken(event)
+    if (!token || !verifyJwt(token, sessionSecret)) {
+      return response(401, { error: 'Unauthorized' })
+    }
+    let body
+    try {
+      body = JSON.parse(parseBody(event))
+    } catch {
+      return response(400, { error: 'Invalid JSON' })
+    }
+    if (!validateSponsorsDoc(body)) {
+      return response(400, { error: 'Invalid sponsors document shape' })
+    }
+    const bucket = process.env.CMS_S3_BUCKET ?? ''
+    const key = process.env.CMS_S3_SPONSORS_KEY || 'sponsors.json'
+    if (!bucket) {
+      return response(500, { error: 'CMS_S3_BUCKET not set' })
+    }
+    const version = Math.max(1, Math.floor(body.version))
+    const normalized = {
+      version,
+      sponsors: body.sponsors.map((s) => ({
+        id: s.id,
+        name: String(s.name).trim(),
+        websiteUrl: String(s.websiteUrl).trim(),
+        logoUrl: String(s.logoUrl).trim(),
+        sortOrder: Math.floor(s.sortOrder),
+      })),
+    }
+    const payload = JSON.stringify(normalized, null, 2)
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: payload,
+          ContentType: 'application/json; charset=utf-8',
+          CacheControl: 'max-age=30',
+        }),
+      )
+    } catch (err) {
+      return s3PutErrorResponse(err)
+    }
+    return response(200, { ok: true })
+  }
+
   if (isVendorLogo) {
     const token = bearerToken(event)
     if (!token || !verifyJwt(token, sessionSecret)) {
@@ -394,6 +472,59 @@ export async function handler(event) {
       return response(500, { error: 'CMS_S3_BUCKET not set' })
     }
     const prefix = normalizeVendorLogosPrefix(process.env.CMS_S3_VENDOR_LOGOS_PREFIX)
+    const objectKey = `${prefix}${randomUUID()}-${filename}`
+    const region = process.env.AWS_REGION || 'us-east-1'
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: objectKey,
+          Body: buf,
+          ContentType: contentType,
+          CacheControl: 'max-age=86400',
+        }),
+      )
+    } catch (err) {
+      return s3PutErrorResponse(err)
+    }
+    const publicUrl = publicObjectUrl(bucket, region, objectKey)
+    return response(200, { ok: true, publicUrl, key: objectKey })
+  }
+
+  if (isSponsorLogo) {
+    const token = bearerToken(event)
+    if (!token || !verifyJwt(token, sessionSecret)) {
+      return response(401, { error: 'Unauthorized' })
+    }
+    let parsed
+    try {
+      parsed = JSON.parse(parseBody(event))
+    } catch {
+      return response(400, { error: 'Invalid JSON' })
+    }
+    const contentType = typeof parsed.contentType === 'string' ? parsed.contentType.trim() : ''
+    const filename = sanitizeFilename(parsed.filename)
+    const dataBase64 = stripDataUrlBase64(parsed.dataBase64)
+    if (!LOGO_TYPES.has(contentType)) {
+      return response(400, { error: 'Unsupported image type' })
+    }
+    if (!dataBase64) {
+      return response(400, { error: 'Missing image data' })
+    }
+    let buf
+    try {
+      buf = Buffer.from(dataBase64, 'base64')
+    } catch {
+      return response(400, { error: 'Invalid base64 image data' })
+    }
+    if (buf.length < 16 || buf.length > MAX_LOGO_BYTES) {
+      return response(400, { error: 'Image must be under 5 MB' })
+    }
+    const bucket = process.env.CMS_S3_BUCKET ?? ''
+    if (!bucket) {
+      return response(500, { error: 'CMS_S3_BUCKET not set' })
+    }
+    const prefix = normalizeSponsorLogosPrefix(process.env.CMS_S3_SPONSOR_LOGOS_PREFIX)
     const objectKey = `${prefix}${randomUUID()}-${filename}`
     const region = process.env.AWS_REGION || 'us-east-1'
     try {

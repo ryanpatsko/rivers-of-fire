@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import GeneralSiteEditor from './admin/GeneralSiteEditor'
+import SponsorsEditor from './admin/SponsorsEditor'
 import VendorsEditor from './admin/VendorsEditor'
 import {
   adminLogin,
@@ -39,7 +40,7 @@ const TAB_INTRO: Record<AdminTabId, string> = {
     'Festival-wide settings—dates, venue, ticket link, social links, and other site-wide copy will be editable here.',
   events: 'Friday preview and Saturday schedule—event cards and descriptions will be editable here.',
   vendors: '',
-  sponsors: 'Sponsor list and ordering will be editable here.',
+  sponsors: '',
 }
 
 function AdminDashboard() {
@@ -121,6 +122,10 @@ function AdminDashboard() {
             ) : id === 'vendors' ? (
               activeTab === 'vendors' ? (
                 <VendorsEditor />
+              ) : null
+            ) : id === 'sponsors' ? (
+              activeTab === 'sponsors' ? (
+                <SponsorsEditor />
               ) : null
             ) : (
               <>

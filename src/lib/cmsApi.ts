@@ -1,4 +1,5 @@
 import type { SiteContent } from '../content/siteContent'
+import type { SponsorsDoc } from '../content/sponsorsContent'
 import type { VendorsDoc } from '../content/vendorsContent'
 import { getAdminAuthBaseUrl } from './adminAuth'
 
@@ -77,11 +78,43 @@ export async function saveVendorsContent(
   return { ok: true }
 }
 
+export async function saveSponsorsContent(
+  token: string,
+  doc: SponsorsDoc,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const base = getAdminAuthBaseUrl()
+  if (!base) {
+    return { ok: false, message: 'Admin API is not configured.' }
+  }
+  let res: Response
+  try {
+    res = await fetch(`${base}/sponsors`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(doc),
+    })
+  } catch {
+    return {
+      ok: false,
+      message: 'Network error saving sponsors. Check CORS and the Function URL.',
+    }
+  }
+  if (!res.ok) {
+    const detail = await readErrorDetail(res)
+    return { ok: false, message: `Save failed (HTTP ${res.status}${detail}).` }
+  }
+  return { ok: true }
+}
+
 const MAX_LOGO_UPLOAD_BYTES = 4.5 * 1024 * 1024
 
-export async function uploadVendorLogo(
+async function uploadLogoToPath(
   token: string,
   file: File,
+  path: 'vendor-logo' | 'sponsor-logo',
 ): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
   const base = getAdminAuthBaseUrl()
   if (!base) {
@@ -101,7 +134,7 @@ export async function uploadVendorLogo(
   const contentType = file.type || 'image/png'
   let res: Response
   try {
-    res = await fetch(`${base}/vendor-logo`, {
+    res = await fetch(`${base}/${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,4 +163,18 @@ export async function uploadVendorLogo(
     return { ok: false, message: 'Server did not return a logo URL.' }
   }
   return { ok: true, publicUrl: parsed.publicUrl }
+}
+
+export async function uploadVendorLogo(
+  token: string,
+  file: File,
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  return uploadLogoToPath(token, file, 'vendor-logo')
+}
+
+export async function uploadSponsorLogo(
+  token: string,
+  file: File,
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  return uploadLogoToPath(token, file, 'sponsor-logo')
 }

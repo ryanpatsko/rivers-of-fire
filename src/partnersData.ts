@@ -1,6 +1,6 @@
 /**
  * Shared `Partner` shape for vendor grids and sponsors.
- * Vendor rosters load from S3 (`vendors.json`); see `content/vendorsContent.ts`.
+ * Vendor rosters load from S3 (`vendors.json`); sponsors from `sponsors.json`.
  */
 export type Partner = {
   id: string
@@ -10,5 +10,3 @@ export type Partner = {
   /** Full URL including https:// */
   websiteUrl?: string
 }
-
-export const sponsors2026: Partner[] = []

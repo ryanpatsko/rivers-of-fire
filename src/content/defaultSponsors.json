@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "sponsors": [
+    {
+      "id": "new-sponsor",
+      "name": "New Sponsor",
+      "websiteUrl": "",
+      "logoUrl": "",
+      "sortOrder": 0
+    }
+  ]
+}
