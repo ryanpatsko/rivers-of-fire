@@ -324,17 +324,17 @@ export default function Home() {
                 </a>
               </div>
             </div>
-          </div>
-          <div className={styles.heroVideoCredit}>
-            <span className={styles.heroVideoCreditLabel}>Video production</span>
-            <img
-              className={styles.heroVideoCreditLogo}
-              src="/studiome-logo.png"
-              alt="Studio ME"
-              width={200}
-              height={48}
-              decoding="async"
-            />
+            <div className={styles.heroVideoCredit}>
+              <span className={styles.heroVideoCreditLabel}>Video production</span>
+              <img
+                className={styles.heroVideoCreditLogo}
+                src="/studiome-logo.png"
+                alt="Studio ME"
+                width={200}
+                height={48}
+                decoding="async"
+              />
+            </div>
           </div>
         </header>
 
