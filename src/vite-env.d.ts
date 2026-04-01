@@ -9,4 +9,6 @@ interface ImportMetaEnv {
   readonly VITE_VENDORS_URL?: string
   /** Optional override for sponsors.json URL (defaults to S3 public object in sponsorsContent.ts). */
   readonly VITE_SPONSORS_URL?: string
+  /** Optional override for events.json URL (defaults to S3 public object in eventsContent.ts). */
+  readonly VITE_EVENTS_URL?: string
 }

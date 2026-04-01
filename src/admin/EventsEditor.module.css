@@ -1,0 +1,120 @@
+/* Compact event list (read-only + actions) */
+.listWrap {
+  width: 100%;
+  max-width: 48rem;
+}
+
+.listTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.listTable th,
+.listTable td {
+  border: 1px solid rgba(42, 49, 64, 0.12);
+  padding: 0.5rem 0.55rem;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.listTable th {
+  font-weight: 600;
+  color: var(--color-midnight);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.titleCell {
+  font-weight: 600;
+  color: var(--color-ink);
+  max-width: 14rem;
+}
+
+.titleClamp {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaMuted {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.listActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(42, 49, 64, 0.1);
+  padding: 2px;
+}
+
+.emojiCell {
+  font-size: 1.25rem;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Single-event edit form */
+.editWrap {
+  max-width: 36rem;
+}
+
+.editTitle {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-midnight);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.05rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: var(--color-midnight);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.editActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(42, 49, 64, 0.12);
+}
+
+.logoPreviewEdit {
+  max-width: 140px;
+  max-height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(42, 49, 64, 0.12);
+  padding: 0.35rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}

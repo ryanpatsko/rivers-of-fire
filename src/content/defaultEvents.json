@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "evt-friday-crafters",
+      "day": "friday",
+      "sortOrder": 0,
+      "title": "Crafters & makers",
+      "description": "Friday night is free. Browse handmade goods from local makers. Hot sauce vendors are not selling bottles this evening.",
+      "iconKey": "shop",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-friday-trivia",
+      "day": "friday",
+      "sortOrder": 1,
+      "title": "Trivia",
+      "description": "Team or solo trivia on the festival floor—details and timing to be announced.",
+      "iconKey": "brain",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-friday-escape",
+      "day": "both",
+      "sortOrder": 2,
+      "title": "Pepper-themed mobile escape room",
+      "description": "A traveling escape room with a pepper theme, on site Friday and Saturday.",
+      "iconKey": "van",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-friday-vote",
+      "day": "friday",
+      "sortOrder": 3,
+      "title": "Hot sauce people’s choice",
+      "description": "Voting may open Friday night for favorite sauces, with winners announced Saturday. If it runs, polls would stay open through roughly the first two hours Saturday.",
+      "iconKey": "vote",
+      "logoUrl": "",
+      "badge": "maybe",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-hot-sauce",
+      "day": "saturday",
+      "sortOrder": 0,
+      "title": "Hot sauce vendors",
+      "description": "Small-batch makers sampling and selling bottles—local and visiting brands, larger layout than year one.",
+      "iconKey": "pepper",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "hot-sauce-vendors-heading",
+      "jumpLinkLabel": "View hot sauce vendors"
+    },
+    {
+      "id": "evt-sat-league",
+      "day": "saturday",
+      "sortOrder": 1,
+      "title": "League of Fire pepper contest",
+      "description": "The main eating competition: experienced competitors and newcomers take on the League of Fire format.",
+      "iconKey": "flame",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-food",
+      "day": "saturday",
+      "sortOrder": 2,
+      "title": "Food vendors",
+      "description": "Food trucks and stands with snacks and full plates—see the roster below.",
+      "iconKey": "taco",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "food-trucks-heading",
+      "jumpLinkLabel": "View food trucks and other vendors"
+    },
+    {
+      "id": "evt-sat-hot-talk",
+      "day": "saturday",
+      "sortOrder": 3,
+      "title": "Pittsburgh Hot Talk",
+      "description": "A Hot Ones–style interview: Pittsburgh guests and a lineup of sauces, hosted at the fest.",
+      "iconKey": "mic",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-scavenger",
+      "day": "saturday",
+      "sortOrder": 4,
+      "title": "Scavenger hunt",
+      "description": "Clues and checkpoints around the venue; finish for prizes or perks (details at the event).",
+      "iconKey": "search",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-fire-show",
+      "day": "saturday",
+      "sortOrder": 5,
+      "title": "Fire & aerial show",
+      "description": "Iron City Circus Arts returns with fire performance and aerial work designed to light up the night.",
+      "iconKey": "circus",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-ice",
+      "day": "saturday",
+      "sortOrder": 6,
+      "title": "Fire & ice challenge with Nervana",
+      "description": "Optional ice bath or a fire-then-ice sequence to increase the donation. Run with Nervana Health (formerly Pittsburgh Tub Club); proceeds support Animal Friends for Veterans.",
+      "iconKey": "snowflake",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-dj",
+      "day": "saturday",
+      "sortOrder": 7,
+      "title": "DJ & games",
+      "description": "Pinball loft, pool, air hockey, and a DJ on the schedule.",
+      "iconKey": "gamepad",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    },
+    {
+      "id": "evt-sat-wings",
+      "day": "saturday",
+      "sortOrder": 8,
+      "title": "10-wing challenge",
+      "description": "Ten wings, increasing heat—available as a ticket add-on when sales open.",
+      "iconKey": "wing",
+      "logoUrl": "",
+      "logoLinkUrl": "",
+      "jumpToSectionId": "",
+      "jumpLinkLabel": ""
+    }
+  ]
+}

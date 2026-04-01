@@ -1,4 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  createDefaultEventsDoc,
+  eventsForFriday,
+  eventsForSaturday,
+  loadEvents,
+  toEventCardModel,
+  type EventCardModel,
+} from './content/eventsContent'
 import { createDefaultSiteContent, loadSiteContent } from './content/siteContent'
 import {
   createDefaultSponsorsDoc,
@@ -26,17 +34,6 @@ function CmsHtml({ html, className }: { html: string; className: string }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
-type EventDef = {
-  /** Native emoji — full color, matches the original card look */
-  icon: string
-  title: string
-  description: string
-  badge?: 'maybe' | 'both-days'
-  /** In-page section id (no `#`) for smooth scroll from the card */
-  jumpToSectionId?: string
-  jumpLinkLabel?: string
-}
-
 function SectionBgSpecks({ count = 16 }: { count?: number }) {
   return (
     <div className={styles.sectionBgSpecks} aria-hidden="true">
@@ -46,90 +43,6 @@ function SectionBgSpecks({ count = 16 }: { count?: number }) {
     </div>
   )
 }
-
-const FRIDAY_EVENTS: EventDef[] = [
-  {
-    icon: '🛍️',
-    title: 'Crafters & makers',
-    description:
-      'Friday night is free. Browse handmade goods from local makers. Hot sauce vendors are not selling bottles this evening.',
-  },
-  {
-    icon: '🧠',
-    title: 'Trivia',
-    description: 'Team or solo trivia on the festival floor—details and timing to be announced.',
-  },
-  {
-    icon: '🚐',
-    title: 'Pepper-themed mobile escape room',
-    description:
-      'A traveling escape room with a pepper theme, on site Friday and Saturday.',
-    badge: 'both-days',
-  },
-  {
-    icon: '🗳️',
-    title: 'Hot sauce people’s choice',
-    description:
-      'Voting may open Friday night for favorite sauces, with winners announced Saturday. If it runs, polls would stay open through roughly the first two hours Saturday.',
-    badge: 'maybe',
-  },
-]
-
-const SATURDAY_EVENTS: EventDef[] = [
-  {
-    icon: '🌶️',
-    title: 'Hot sauce vendors',
-    description:
-      'Small-batch makers sampling and selling bottles—local and visiting brands, larger layout than year one.',
-    jumpToSectionId: 'hot-sauce-vendors-heading',
-    jumpLinkLabel: 'View hot sauce vendors',
-  },
-  {
-    icon: '🔥',
-    title: 'League of Fire pepper contest',
-    description: 'The main eating competition: experienced competitors and newcomers take on the League of Fire format.',
-  },
-  {
-    icon: '🌮',
-    title: 'Food vendors',
-    description: 'Food trucks and stands with snacks and full plates—see the roster below.',
-    jumpToSectionId: 'food-trucks-heading',
-    jumpLinkLabel: 'View food trucks and other vendors',
-  },
-  {
-    icon: '🎙️',
-    title: 'Pittsburgh Hot Talk',
-    description:
-      'A Hot Ones–style interview: Pittsburgh guests and a lineup of sauces, hosted at the fest.',
-  },
-  {
-    icon: '🔍',
-    title: 'Scavenger hunt',
-    description: 'Clues and checkpoints around the venue; finish for prizes or perks (details at the event).',
-  },
-  {
-    icon: '🎪',
-    title: 'Fire & aerial show',
-    description:
-      'Iron City Circus Arts returns with fire performance and aerial work designed to light up the night.',
-  },
-  {
-    icon: '❄️',
-    title: 'Fire & ice challenge with Nervana',
-    description:
-      'Optional ice bath or a fire-then-ice sequence to increase the donation. Run with Nervana Health (formerly Pittsburgh Tub Club); proceeds support Animal Friends for Veterans.',
-  },
-  {
-    icon: '🎮',
-    title: 'DJ & games',
-    description: 'Pinball loft, pool, air hockey, and a DJ on the schedule.',
-  },
-  {
-    icon: '🍗',
-    title: '10-wing challenge',
-    description: 'Ten wings, increasing heat—available as a ticket add-on when sales open.',
-  },
-]
 
 /** Muted loop behind the hero; omitted when the user prefers reduced motion. */
 function HeroBackdropVideo({ src }: { src: string }) {
@@ -185,7 +98,7 @@ function EventCard({
   flipFromRight = false,
   flipStaggerMs = 0,
 }: {
-  event: EventDef
+  event: EventCardModel
   flipFromRight?: boolean
   flipStaggerMs?: number
 }) {
@@ -223,19 +136,49 @@ function EventCard({
       style={{ ['--event-flip-delay' as string]: `${flipStaggerMs}ms` }}
     >
       <div className={styles.eventHead}>
-        <div className={styles.eventIcon} aria-hidden="true">
-          {event.icon}
-        </div>
+        {event.logoUrl || event.iconEmoji ? (
+          <div className={styles.eventHeadVisual} aria-hidden="true">
+            {event.logoUrl ? (
+              <div className={styles.eventCardLogoWrap}>
+                {event.logoLinkUrl ? (
+                  <a
+                    className={styles.eventCardLogoLink}
+                    href={event.logoLinkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${event.title} — visit partner site (opens in new tab)`}
+                  >
+                    <img
+                      className={styles.eventCardLogo}
+                      src={event.logoUrl}
+                      alt=""
+                      decoding="async"
+                    />
+                  </a>
+                ) : (
+                  <img
+                    className={styles.eventCardLogo}
+                    src={event.logoUrl}
+                    alt=""
+                    decoding="async"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className={styles.eventIcon}>{event.iconEmoji}</div>
+            )}
+          </div>
+        ) : null}
         <h3 className={styles.eventTitle}>{event.title}</h3>
       </div>
-      {(event.badge === 'maybe' || event.badge === 'both-days') && (
+      {(event.showBothDaysBadge || event.badge === 'maybe') && (
         <div className={styles.eventBadgeRow}>
-          {event.badge === 'both-days' && (
+          {event.showBothDaysBadge ? (
             <span className={styles.eventBadge}>Fri & Sat</span>
-          )}
-          {event.badge === 'maybe' && (
+          ) : null}
+          {event.badge === 'maybe' ? (
             <span className={`${styles.eventBadge} ${styles.eventBadgeMaybe}`}>Maybe</span>
-          )}
+          ) : null}
         </div>
       )}
       <p className={styles.eventBody}>{event.description}</p>
@@ -254,6 +197,7 @@ export default function Home() {
   const [site, setSite] = useState(createDefaultSiteContent)
   const [vendorsDoc, setVendorsDoc] = useState(createDefaultVendorsDoc)
   const [sponsorsDoc, setSponsorsDoc] = useState(createDefaultSponsorsDoc)
+  const [eventsDoc, setEventsDoc] = useState(createDefaultEventsDoc)
 
   useEffect(() => {
     void loadSiteContent().then(setSite).catch(() => {})
@@ -266,6 +210,13 @@ export default function Home() {
   useEffect(() => {
     void loadSponsors().then(setSponsorsDoc).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    void loadEvents().then(setEventsDoc).catch(() => {})
+  }, [])
+
+  const fridayEvents = eventsForFriday(eventsDoc.events).map(toEventCardModel)
+  const saturdayEvents = eventsForSaturday(eventsDoc.events).map(toEventCardModel)
 
   const hotSauceVendors = vendorsToPartners(vendorsDoc.vendors, 'hotSauce')
   const otherVendors = vendorsToPartners(vendorsDoc.vendors, 'other')
@@ -374,6 +325,17 @@ export default function Home() {
               </div>
             </div>
           </div>
+          <div className={styles.heroVideoCredit}>
+            <span className={styles.heroVideoCreditLabel}>Video production</span>
+            <img
+              className={styles.heroVideoCreditLogo}
+              src="/studiome-logo.png"
+              alt="Studio ME"
+              width={200}
+              height={48}
+              decoding="async"
+            />
+          </div>
         </header>
 
         <main id="main">
@@ -392,9 +354,9 @@ export default function Home() {
               <h3 className={styles.dayHeading}>{g.dayFridayHeading}</h3>
               <CmsHtml html={g.dayFridaySubHtml} className="siteContentHtmlDaySub" />
               <div className={styles.eventsGrid}>
-                {FRIDAY_EVENTS.map((event, i) => (
+                {fridayEvents.map((event, i) => (
                   <EventCard
-                    key={event.title}
+                    key={event.id}
                     event={event}
                     flipFromRight={i % 2 === 1}
                     flipStaggerMs={i * 55}
@@ -407,9 +369,9 @@ export default function Home() {
               <h3 className={styles.dayHeading}>{g.daySaturdayHeading}</h3>
               <CmsHtml html={g.daySaturdaySubHtml} className="siteContentHtmlDaySub" />
               <div className={styles.eventsGrid}>
-                {SATURDAY_EVENTS.map((event, i) => (
+                {saturdayEvents.map((event, i) => (
                   <EventCard
-                    key={event.title}
+                    key={event.id}
                     event={event}
                     flipFromRight={i % 2 === 1}
                     flipStaggerMs={i * 48}
@@ -419,7 +381,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={styles.sectionNarrow} aria-labelledby="hot-sauce-vendors-heading">
+          <section className={styles.sectionPartner} aria-labelledby="hot-sauce-vendors-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
               <p className={styles.sectionKicker}>{g.hotSauceKicker}</p>
@@ -436,7 +398,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={styles.sectionNarrow} aria-labelledby="food-more-vendors-heading">
+          <section className={styles.sectionPartner} aria-labelledby="food-more-vendors-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
               <p className={styles.sectionKicker}>{g.foodKicker}</p>
@@ -458,7 +420,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={styles.sectionNarrow} aria-labelledby="sponsors-2026-heading">
+          <section className={styles.sectionPartner} aria-labelledby="sponsors-2026-heading">
             <SectionBgSpecks />
             <div className={styles.sectionHeader}>
               <p className={styles.sectionKicker}>{g.sponsorsKicker}</p>

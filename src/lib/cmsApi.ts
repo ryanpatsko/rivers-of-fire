@@ -1,3 +1,4 @@
+import type { EventsDoc } from '../content/eventsContent'
 import type { SiteContent } from '../content/siteContent'
 import type { SponsorsDoc } from '../content/sponsorsContent'
 import type { VendorsDoc } from '../content/vendorsContent'
@@ -109,12 +110,43 @@ export async function saveSponsorsContent(
   return { ok: true }
 }
 
+export async function saveEventsContent(
+  token: string,
+  doc: EventsDoc,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const base = getAdminAuthBaseUrl()
+  if (!base) {
+    return { ok: false, message: 'Admin API is not configured.' }
+  }
+  let res: Response
+  try {
+    res = await fetch(`${base}/events`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(doc),
+    })
+  } catch {
+    return {
+      ok: false,
+      message: 'Network error saving events. Check CORS and the Function URL.',
+    }
+  }
+  if (!res.ok) {
+    const detail = await readErrorDetail(res)
+    return { ok: false, message: `Save failed (HTTP ${res.status}${detail}).` }
+  }
+  return { ok: true }
+}
+
 const MAX_LOGO_UPLOAD_BYTES = 4.5 * 1024 * 1024
 
 async function uploadLogoToPath(
   token: string,
   file: File,
-  path: 'vendor-logo' | 'sponsor-logo',
+  path: 'vendor-logo' | 'sponsor-logo' | 'event-logo',
 ): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
   const base = getAdminAuthBaseUrl()
   if (!base) {
@@ -177,4 +209,11 @@ export async function uploadSponsorLogo(
   file: File,
 ): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
   return uploadLogoToPath(token, file, 'sponsor-logo')
+}
+
+export async function uploadEventLogo(
+  token: string,
+  file: File,
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  return uploadLogoToPath(token, file, 'event-logo')
 }
