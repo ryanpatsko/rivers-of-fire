@@ -64,6 +64,27 @@ a {
   margin-top: 0;
 }
 
+/* Lists: parent is text-align center for prose; bullets stay left, so align list body with markers */
+.siteContentHtmlSectionLead ul,
+.siteContentHtmlSectionLead ol {
+  text-align: left;
+  margin: 0.85rem 0 0;
+  padding-left: 1.35rem;
+  list-style-position: outside;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.siteContentHtmlSectionLead li {
+  margin: 0.35rem 0;
+  padding-left: 0.15rem;
+}
+
+.siteContentHtmlSectionLead li:first-child {
+  margin-top: 0;
+}
+
 .siteContentHtmlSectionLead .inlineLink {
   color: var(--color-gold-bright);
   font-weight: 600;
@@ -89,6 +110,22 @@ a {
   font-size: 0.95rem;
   line-height: 1.55;
   color: var(--color-muted);
+}
+
+.siteContentHtmlDaySub ul,
+.siteContentHtmlDaySub ol {
+  text-align: left;
+  margin: 0.75rem 0 0;
+  padding-left: 1.35rem;
+  list-style-position: outside;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.siteContentHtmlDaySub li {
+  margin: 0.3rem 0;
+  padding-left: 0.15rem;
 }
 
 .siteContentHtmlFooter {
