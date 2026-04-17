@@ -1,12 +1,21 @@
 {
   "version": 1,
+  "tierLabels": {
+    "carolinaReaper": "Carolina Reaper",
+    "ghostPepper": "Ghost Pepper",
+    "habanero": "Habanero",
+    "cayenne": "Cayenne",
+    "poblano": "Poblano"
+  },
+  "tierImages": {},
   "sponsors": [
     {
       "id": "new-sponsor",
       "name": "New Sponsor",
       "websiteUrl": "",
       "logoUrl": "",
-      "sortOrder": 0
+      "sortOrder": 0,
+      "tier": "poblano"
     }
   ]
 }

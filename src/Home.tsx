@@ -11,7 +11,8 @@ import { createDefaultSiteContent, loadSiteContent } from './content/siteContent
 import {
   createDefaultSponsorsDoc,
   loadSponsors,
-  sponsorsToPartners,
+  sponsorsGroupedByTier,
+  tierImageOrEmoji,
 } from './content/sponsorsContent'
 import {
   createDefaultVendorsDoc,
@@ -221,7 +222,7 @@ export default function Home() {
   const hotSauceVendors = vendorsToPartners(vendorsDoc.vendors, 'hotSauce')
   const otherVendors = vendorsToPartners(vendorsDoc.vendors, 'other')
   const foodTruckVendors = vendorsToPartners(vendorsDoc.vendors, 'foodTruck')
-  const sponsorPartners = sponsorsToPartners(sponsorsDoc.sponsors)
+  const sponsorGroups = sponsorsGroupedByTier(sponsorsDoc)
 
   const g = site.general
 
@@ -430,7 +431,37 @@ export default function Home() {
               <CmsHtml html={g.sponsorsLeadHtml} className="siteContentHtmlSectionLead" />
             </div>
             <div className={styles.vendorStrip}>
-              <PartnerGrid partners={sponsorPartners} emptyMessage={g.sponsorsEmpty} />
+              {sponsorGroups.length === 0 ? (
+                <p className={styles.sponsorsEmpty}>{g.sponsorsEmpty}</p>
+              ) : (
+                sponsorGroups.map(({ tier, partners }) => {
+                  const { imageUrl, emoji } = tierImageOrEmoji(sponsorsDoc.tierImages, tier)
+                  return (
+                    <div key={tier}>
+                      <h3 className={styles.sponsorTierHeading}>
+                        <span className={styles.sponsorTierHeadingVisual}>
+                          {imageUrl ? (
+                            <img
+                              className={styles.sponsorTierHeadingImg}
+                              src={imageUrl}
+                              alt=""
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className={styles.sponsorTierHeadingEmoji} aria-hidden>
+                              {emoji}
+                            </span>
+                          )}
+                        </span>
+                        <span className={styles.sponsorTierHeadingTitle}>
+                          {sponsorsDoc.tierLabels[tier]}
+                        </span>
+                      </h3>
+                      <PartnerGrid partners={partners} emptyMessage={g.sponsorsEmpty} />
+                    </div>
+                  )
+                })
+              )}
             </div>
           </section>
 

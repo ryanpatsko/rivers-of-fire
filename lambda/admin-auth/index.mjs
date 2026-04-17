@@ -123,6 +123,47 @@ const LOGO_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'
 
 const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
+const SPONSOR_TIER_ORDER_LIST = [
+  'carolinaReaper',
+  'ghostPepper',
+  'habanero',
+  'cayenne',
+  'poblano',
+]
+const SPONSOR_TIER_IDS = new Set(SPONSOR_TIER_ORDER_LIST)
+const DEFAULT_SPONSOR_TIER_LABELS = {
+  carolinaReaper: 'Carolina Reaper',
+  ghostPepper: 'Ghost Pepper',
+  habanero: 'Habanero',
+  cayenne: 'Cayenne',
+  poblano: 'Poblano',
+}
+
+/** @param {unknown} v */
+function validateTierImagesField(v) {
+  if (v === undefined || v === null) return true
+  if (typeof v !== 'object' || Array.isArray(v)) return false
+  for (const k of Object.keys(v)) {
+    if (!SPONSOR_TIER_IDS.has(k)) return false
+    const val = v[k]
+    if (typeof val !== 'string' || val.length > 2048) return false
+    if (val.trim() && !val.startsWith('https://')) return false
+  }
+  return true
+}
+
+/** @param {unknown} v */
+function validateTierLabelsField(v) {
+  if (v === undefined || v === null) return true
+  if (typeof v !== 'object' || Array.isArray(v)) return false
+  for (const k of Object.keys(v)) {
+    if (!SPONSOR_TIER_IDS.has(k)) return false
+    const val = v[k]
+    if (typeof val !== 'string' || val.length > 120) return false
+  }
+  return true
+}
+
 /** @param {unknown} v */
 function validateSponsor(v) {
   if (!v || typeof v !== 'object') return false
@@ -133,6 +174,7 @@ function validateSponsor(v) {
   if (typeof v.logoUrl !== 'string' || v.logoUrl.length > 2048) return false
   if (v.logoUrl && !v.logoUrl.startsWith('https://')) return false
   if (typeof v.sortOrder !== 'number' || !Number.isFinite(v.sortOrder)) return false
+  if (typeof v.tier !== 'string' || !SPONSOR_TIER_IDS.has(v.tier)) return false
   return true
 }
 
@@ -141,6 +183,8 @@ function validateSponsorsDoc(body) {
   if (!body || typeof body !== 'object') return false
   if (typeof body.version !== 'number') return false
   if (!Array.isArray(body.sponsors) || body.sponsors.length > 500) return false
+  if (!validateTierImagesField(body.tierImages)) return false
+  if (!validateTierLabelsField(body.tierLabels)) return false
   return body.sponsors.every(validateSponsor)
 }
 
@@ -473,14 +517,35 @@ export async function handler(event) {
       return response(500, { error: 'CMS_S3_BUCKET not set' })
     }
     const version = Math.max(1, Math.floor(body.version))
+    const tierImages = {}
+    if (body.tierImages && typeof body.tierImages === 'object' && !Array.isArray(body.tierImages)) {
+      for (const tid of SPONSOR_TIER_ORDER_LIST) {
+        const raw = body.tierImages[tid]
+        if (typeof raw !== 'string') continue
+        const u = raw.trim().slice(0, 2048)
+        if (u && u.startsWith('https://')) tierImages[tid] = u
+      }
+    }
+    const tierLabels = { ...DEFAULT_SPONSOR_TIER_LABELS }
+    if (body.tierLabels && typeof body.tierLabels === 'object' && !Array.isArray(body.tierLabels)) {
+      for (const tid of SPONSOR_TIER_ORDER_LIST) {
+        const raw = body.tierLabels[tid]
+        if (typeof raw !== 'string') continue
+        const t = raw.trim().slice(0, 100)
+        if (t) tierLabels[tid] = t
+      }
+    }
     const normalized = {
       version,
+      tierLabels,
+      tierImages,
       sponsors: body.sponsors.map((s) => ({
         id: s.id,
         name: String(s.name).trim(),
         websiteUrl: String(s.websiteUrl).trim(),
         logoUrl: String(s.logoUrl).trim(),
         sortOrder: Math.floor(s.sortOrder),
+        tier: s.tier,
       })),
     }
     const payload = JSON.stringify(normalized, null, 2)

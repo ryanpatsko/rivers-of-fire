@@ -1271,6 +1271,59 @@ main > section:first-of-type {
   margin-top: 2.25rem;
 }
 
+.sponsorTierHeading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  font-style: italic;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-cream);
+}
+
+.vendorStrip .sponsorTierHeading:not(:first-of-type) {
+  margin-top: 2.25rem;
+}
+
+.sponsorTierHeadingVisual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 2.25rem;
+}
+
+.sponsorTierHeadingTitle {
+  display: block;
+  line-height: 1.25;
+}
+
+.sponsorTierHeadingEmoji {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.sponsorTierHeadingImg {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sponsorsEmpty {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+  text-align: center;
+  max-width: 36ch;
+  margin-inline: auto;
+}
+
 .footer {
   position: relative;
   padding: 3rem 1.5rem 2rem;

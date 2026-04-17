@@ -1,6 +1,13 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
+  DEFAULT_SPONSOR_TIER,
+  SPONSOR_TIER_DEFAULT_ICON_EMOJI,
+  SPONSOR_TIER_LABELS,
+  SPONSOR_TIER_ORDER,
   type SponsorRecord,
+  type SponsorTierId,
+  type SponsorTierImages,
+  type SponsorTierLabels,
   loadSponsors,
   sanitizeSponsorsForSave,
 } from '../content/sponsorsContent'
@@ -33,16 +40,19 @@ export default function SponsorsEditor() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [savedVersion, setSavedVersion] = useState(1)
   const [sponsors, setSponsors] = useState<SponsorRecord[]>([])
+  const [tierImages, setTierImages] = useState<SponsorTierImages>({})
+  const [tierLabels, setTierLabels] = useState<SponsorTierLabels>(() => ({ ...SPONSOR_TIER_LABELS }))
   const [baselineJson, setBaselineJson] = useState<string | null>(null)
   const [saveNotice, setSaveNotice] = useState<SaveNotice | null>(null)
   const [addHint, setAddHint] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
+  const [uploadingTier, setUploadingTier] = useState<SponsorTierId | null>(null)
 
   const isDirty = useMemo(() => {
     if (baselineJson === null) return false
-    return JSON.stringify(sponsors) !== baselineJson
-  }, [sponsors, baselineJson])
+    return JSON.stringify({ sponsors, tierImages, tierLabels }) !== baselineJson
+  }, [sponsors, tierImages, tierLabels, baselineJson])
 
   useEffect(() => {
     if (isDirty) {
@@ -58,7 +68,15 @@ export default function SponsorsEditor() {
         if (cancelled) return
         setSavedVersion(data.version)
         setSponsors(data.sponsors)
-        setBaselineJson(JSON.stringify(data.sponsors))
+        setTierImages(data.tierImages ?? {})
+        setTierLabels(data.tierLabels ?? { ...SPONSOR_TIER_LABELS })
+        setBaselineJson(
+          JSON.stringify({
+            sponsors: data.sponsors,
+            tierImages: data.tierImages ?? {},
+            tierLabels: data.tierLabels ?? { ...SPONSOR_TIER_LABELS },
+          }),
+        )
         setStatus('ready')
       } catch (e) {
         if (cancelled) return
@@ -83,7 +101,14 @@ export default function SponsorsEditor() {
       const max = prev.reduce((m, x) => Math.max(m, x.sortOrder), -1)
       return [
         ...prev,
-        { id, name: 'New Sponsor', websiteUrl: '', logoUrl: '', sortOrder: max + 1 },
+        {
+          id,
+          name: 'New Sponsor',
+          websiteUrl: '',
+          logoUrl: '',
+          sortOrder: max + 1,
+          tier: DEFAULT_SPONSOR_TIER,
+        },
       ]
     })
   }
@@ -114,6 +139,27 @@ export default function SponsorsEditor() {
     }
   }
 
+  async function onPickTierImage(tier: SponsorTierId, file: File | null) {
+    if (!file) return
+    const token = getStoredSessionToken()
+    if (!token) {
+      setSaveNotice({ kind: 'error', message: 'Not signed in.' })
+      return
+    }
+    setSaveNotice(null)
+    setUploadingTier(tier)
+    try {
+      const result = await uploadSponsorLogo(token, file)
+      if (result.ok) {
+        setTierImages((prev) => ({ ...prev, [tier]: result.publicUrl }))
+      } else {
+        setSaveNotice({ kind: 'error', message: result.message })
+      }
+    } finally {
+      setUploadingTier(null)
+    }
+  }
+
   async function onSave(e: FormEvent) {
     e.preventDefault()
     setSaveNotice(null)
@@ -124,14 +170,22 @@ export default function SponsorsEditor() {
       return
     }
     const nextVersion = savedVersion + 1
-    const doc = sanitizeSponsorsForSave({ version: nextVersion, sponsors })
+    const doc = sanitizeSponsorsForSave({ version: nextVersion, sponsors, tierImages, tierLabels })
     setSaving(true)
     try {
       const result = await saveSponsorsContent(token, doc)
       if (result.ok) {
         setSavedVersion(nextVersion)
         setSponsors(doc.sponsors)
-        setBaselineJson(JSON.stringify(doc.sponsors))
+        setTierImages(doc.tierImages)
+        setTierLabels(doc.tierLabels)
+        setBaselineJson(
+          JSON.stringify({
+            sponsors: doc.sponsors,
+            tierImages: doc.tierImages,
+            tierLabels: doc.tierLabels,
+          }),
+        )
         setSaveNotice({ kind: 'success' })
       } else {
         setSaveNotice({ kind: 'error', message: result.message })
@@ -181,6 +235,86 @@ export default function SponsorsEditor() {
         ) : null}
       </div>
 
+      <section className={styles.typeBlock} aria-labelledby="sponsor-tier-images-heading">
+        <h3 id="sponsor-tier-images-heading" className={styles.typeTitle}>
+          Sponsor level images
+        </h3>
+        <p className={styles.addVendorHint} style={{ marginTop: 0 }}>
+          Optional image for each level. If empty, the site uses the pepper icon (
+          {SPONSOR_TIER_DEFAULT_ICON_EMOJI}).
+        </p>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">Level name</th>
+              <th scope="col">Image</th>
+              <th scope="col">Upload</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SPONSOR_TIER_ORDER.map((tier) => {
+              const url = tierImages[tier]
+              return (
+                <tr key={tier}>
+                  <td>
+                    <input
+                      className={styles.input}
+                      type="text"
+                      value={tierLabels[tier]}
+                      onChange={(ev) =>
+                        setTierLabels((prev) => ({ ...prev, [tier]: ev.target.value }))
+                      }
+                      aria-label={`Display name for ${SPONSOR_TIER_LABELS[tier]} tier`}
+                    />
+                  </td>
+                  <td className={styles.logoCell}>
+                    {url ? (
+                      <img
+                        className={styles.logoPreview}
+                        src={url}
+                        alt=""
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className={styles.logoPlaceholder}>Default icon</div>
+                    )}
+                  </td>
+                  <td>
+                    <input
+                      className={styles.fileInput}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                      disabled={uploadingTier === tier}
+                      onChange={(ev) => {
+                        const f = ev.target.files?.[0] ?? null
+                        ev.target.value = ''
+                        void onPickTierImage(tier, f)
+                      }}
+                      aria-label={`Upload image for ${tierLabels[tier]}`}
+                    />
+                    {url ? (
+                      <button
+                        type="button"
+                        className={styles.rowBtn}
+                        onClick={() =>
+                          setTierImages((prev) => {
+                            const next = { ...prev }
+                            delete next[tier]
+                            return next
+                          })
+                        }
+                      >
+                        Clear image
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </section>
+
       <section className={styles.typeBlock} aria-labelledby="sponsors-list-heading">
         <h3 id="sponsors-list-heading" className={styles.typeTitle}>
           Sponsor list
@@ -189,6 +323,7 @@ export default function SponsorsEditor() {
           <thead>
             <tr>
               <th scope="col">Order</th>
+              <th scope="col">Level</th>
               <th scope="col">Name</th>
               <th scope="col">Website</th>
               <th scope="col">Logo</th>
@@ -198,7 +333,7 @@ export default function SponsorsEditor() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className={styles.mono}>
+                <td colSpan={6} className={styles.mono}>
                   No sponsors yet. Use “Add sponsor”.
                 </td>
               </tr>
@@ -216,6 +351,22 @@ export default function SponsorsEditor() {
                       }
                       aria-label={`Sort order for ${s.name}`}
                     />
+                  </td>
+                  <td>
+                    <select
+                      className={styles.input}
+                      value={s.tier}
+                      onChange={(ev) =>
+                        updateSponsor(s.id, { tier: ev.target.value as SponsorTierId })
+                      }
+                      aria-label={`Sponsor level for ${s.name}`}
+                    >
+                      {SPONSOR_TIER_ORDER.map((tier) => (
+                        <option key={tier} value={tier}>
+                          {tierLabels[tier]}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td>
                     <input
