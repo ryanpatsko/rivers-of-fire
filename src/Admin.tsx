@@ -117,21 +117,13 @@ function AdminDashboard() {
             className={styles.tabPanel}
           >
             {id === 'general' ? (
-              activeTab === 'general' ? (
-                <GeneralSiteEditor />
-              ) : null
+              <GeneralSiteEditor />
             ) : id === 'events' ? (
-              activeTab === 'events' ? (
-                <EventsEditor />
-              ) : null
+              <EventsEditor />
             ) : id === 'vendors' ? (
-              activeTab === 'vendors' ? (
-                <VendorsEditor />
-              ) : null
+              <VendorsEditor />
             ) : id === 'sponsors' ? (
-              activeTab === 'sponsors' ? (
-                <SponsorsEditor />
-              ) : null
+              <SponsorsEditor />
             ) : (
               <>
                 <h3 className={styles.tabPanelTitle}>{TAB_LABELS[id]}</h3>

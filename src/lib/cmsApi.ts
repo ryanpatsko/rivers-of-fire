@@ -1,6 +1,6 @@
 import type { EventsDoc } from '../content/eventsContent'
 import type { SiteContent } from '../content/siteContent'
-import type { SponsorsDoc } from '../content/sponsorsContent'
+import { normalizeSponsorsDoc, type SponsorsDoc } from '../content/sponsorsContent'
 import type { VendorsDoc } from '../content/vendorsContent'
 import { getAdminAuthBaseUrl } from './adminAuth'
 
@@ -77,6 +77,44 @@ export async function saveVendorsContent(
     return { ok: false, message: `Save failed (HTTP ${res.status}${detail}).` }
   }
   return { ok: true }
+}
+
+/**
+ * Same `sponsors.json` the Lambda PUT writes (CMS_S3_BUCKET + CMS_S3_SPONSORS_KEY).
+ * The public `VITE_SPONSORS_URL` may point elsewhere; admin must use this so edits match saves.
+ */
+export async function fetchSponsorsForAdmin(
+  token: string,
+): Promise<{ ok: true; doc: SponsorsDoc } | { ok: false; message: string; notFound?: boolean }> {
+  const base = getAdminAuthBaseUrl()
+  if (!base) {
+    return { ok: false, message: 'Admin API is not configured.' }
+  }
+  let res: Response
+  try {
+    res = await fetch(`${base}/sponsors`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    return { ok: false, message: 'Network error loading sponsors from the CMS.' }
+  }
+  if (res.status === 404) {
+    return { ok: false, message: 'No sponsors.json in the CMS bucket yet.', notFound: true }
+  }
+  if (!res.ok) {
+    const detail = await readErrorDetail(res)
+    return { ok: false, message: `Could not load sponsors (HTTP ${res.status}${detail}).` }
+  }
+  let raw: unknown
+  try {
+    raw = await res.json()
+  } catch {
+    return { ok: false, message: 'Invalid JSON in sponsors response.' }
+  }
+  return { ok: true, doc: normalizeSponsorsDoc(raw) }
 }
 
 export async function saveSponsorsContent(

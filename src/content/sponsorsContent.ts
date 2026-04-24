@@ -53,8 +53,32 @@ const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 const TIER_SET = new Set<string>(SPONSOR_TIER_ORDER)
 
+function lettersOnly(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '')
+}
+
+/**
+ * Resolves a tier from JSON. Unknown strings fall back to the default tier (Poblano),
+ * which is why hand-edited or legacy values (wrong case, display labels) must be recognized here.
+ */
 function parseTier(raw: unknown): SponsorTierId {
-  if (typeof raw === 'string' && TIER_SET.has(raw)) return raw as SponsorTierId
+  if (raw === undefined || raw === null) return DEFAULT_SPONSOR_TIER
+  if (typeof raw !== 'string') return DEFAULT_SPONSOR_TIER
+  const t = raw.trim()
+  if (!t) return DEFAULT_SPONSOR_TIER
+  if (TIER_SET.has(t)) return t as SponsorTierId
+  if (t.includes('_')) {
+    const camel = t
+      .split(/_+/)
+      .map((p, i) => (i === 0 ? p.toLowerCase() : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()))
+      .join('')
+    if (TIER_SET.has(camel)) return camel as SponsorTierId
+  }
+  const n = lettersOnly(t)
+  for (const id of SPONSOR_TIER_ORDER) {
+    if (lettersOnly(id) === n) return id
+    if (lettersOnly(SPONSOR_TIER_LABELS[id]) === n) return id
+  }
   return DEFAULT_SPONSOR_TIER
 }
 

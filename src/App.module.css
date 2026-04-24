@@ -1286,8 +1286,9 @@ main > section:first-of-type {
   color: var(--color-cream);
 }
 
-.vendorStrip .sponsorTierHeading:not(:first-of-type) {
-  margin-top: 2.25rem;
+/* Each level is a wrapper div; h3 is always :first-of-type in that div, so use sibling blocks for vertical rhythm. */
+.vendorStripSponsors > div + div {
+  margin-top: 3rem;
 }
 
 .sponsorTierHeadingVisual {

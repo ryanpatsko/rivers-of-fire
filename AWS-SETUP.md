@@ -164,7 +164,7 @@ Override the public events URL with **`VITE_EVENTS_URL`** if it is not the defau
 
 ### IAM (execution role)
 
-Attach an inline policy allowing **`s3:PutObject`** on **site content**, **vendors.json**, **sponsors.json**, **events.json**, **vendor logos**, **sponsor logos**, and **event card images**:
+Attach an inline policy allowing **`s3:PutObject`** and **`s3:GetObject`** (GetObject is required for **`GET {origin}/sponsors`**, which the admin screen uses to read the same `sponsors.json` the API writes) on **site content**, **vendors.json**, **sponsors.json**, **events.json**, **vendor logos**, **sponsor logos**, and **event card images**:
 
 ```json
 {
@@ -172,7 +172,7 @@ Attach an inline policy allowing **`s3:PutObject`** on **site content**, **vendo
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["s3:PutObject"],
+      "Action": ["s3:GetObject", "s3:PutObject"],
       "Resource": [
         "arn:aws:s3:::rivers-of-fire-cms/site-content.json",
         "arn:aws:s3:::rivers-of-fire-cms/vendors.json",
@@ -206,6 +206,7 @@ The app calls:
 - `PUT {origin}/site-content`
 - `PUT {origin}/vendors`
 - `POST {origin}/vendor-logo` (JSON body with base64 image; max ~5 MB file after decode)
+- `GET {origin}/sponsors` (JWT; reads **`CMS_S3_SPONSORS_KEY`** in **`CMS_S3_BUCKET`**)
 - `PUT {origin}/sponsors`
 - `POST {origin}/sponsor-logo` (same shape as vendor-logo)
 - `PUT {origin}/events`
@@ -246,7 +247,7 @@ There is **no** separate local admin API or local CMS file path in this project 
 
 - [ ] `site-content.json`, **`vendors.json`**, **`sponsors.json`**, and **`events.json`** reachable in browser; S3 CORS allows your origins for `fetch`.
 - [ ] Bucket policy allows public **`GetObject`** on logos under **`vendor-logos/*`**, **`sponsor-logos/*`**, and **`event-logos/*`** if the admin uploads images.
-- [ ] Lambda env vars set; IAM allows **`PutObject`** on site key, **`vendors.json`**, **`sponsors.json`**, **`events.json`**, **`vendor-logos/*`**, **`sponsor-logos/*`**, and **`event-logos/*`**.
+- [ ] Lambda env vars set; IAM allows **`GetObject`/`PutObject`** on site key, **`vendors.json`**, **`sponsors.json`**, **`events.json`**, **`vendor-logos/*`**, **`sponsor-logos/*`**, and **`event-logos/*`** (sponsors at least need **GetObject** for the admin `GET /sponsors` route).
 - [ ] Function URL exists, **auth NONE**, CORS allows POST/GET/PUT + `Authorization`.
 - [ ] Amplify has `VITE_ADMIN_AUTH_URL` (and optional `VITE_SITE_CONTENT_URL`, **`VITE_VENDORS_URL`**, **`VITE_SPONSORS_URL`**, **`VITE_EVENTS_URL`**); rebuild deployed.
 - [ ] `.env.local` matches Amplify for local dev.

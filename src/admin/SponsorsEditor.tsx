@@ -8,11 +8,13 @@ import {
   type SponsorTierId,
   type SponsorTierImages,
   type SponsorTierLabels,
+  createDefaultSponsorsDoc,
   loadSponsors,
+  type SponsorsDoc,
   sanitizeSponsorsForSave,
 } from '../content/sponsorsContent'
-import { saveSponsorsContent, uploadSponsorLogo } from '../lib/cmsApi'
-import { getStoredSessionToken } from '../lib/adminAuth'
+import { fetchSponsorsForAdmin, saveSponsorsContent, uploadSponsorLogo } from '../lib/cmsApi'
+import { getStoredSessionToken, isAdminAuthConfigured } from '../lib/adminAuth'
 import styles from './VendorsEditor.module.css'
 
 type SaveNotice =
@@ -49,6 +51,20 @@ export default function SponsorsEditor() {
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [uploadingTier, setUploadingTier] = useState<SponsorTierId | null>(null)
 
+  function applySponsorsFromDoc(data: SponsorsDoc) {
+    setSavedVersion(data.version)
+    setSponsors(data.sponsors)
+    setTierImages(data.tierImages ?? {})
+    setTierLabels(data.tierLabels ?? { ...SPONSOR_TIER_LABELS })
+    setBaselineJson(
+      JSON.stringify({
+        sponsors: data.sponsors,
+        tierImages: data.tierImages ?? {},
+        tierLabels: data.tierLabels ?? { ...SPONSOR_TIER_LABELS },
+      }),
+    )
+  }
+
   const isDirty = useMemo(() => {
     if (baselineJson === null) return false
     return JSON.stringify({ sponsors, tierImages, tierLabels }) !== baselineJson
@@ -64,19 +80,27 @@ export default function SponsorsEditor() {
     let cancelled = false
     void (async () => {
       try {
-        const data = await loadSponsors()
+        const token = getStoredSessionToken()
+        let data: SponsorsDoc
+        if (isAdminAuthConfigured() && token) {
+          const r = await fetchSponsorsForAdmin(token)
+          if (cancelled) return
+          if (r.ok) {
+            data = r.doc
+          } else if (r.notFound) {
+            try {
+              data = await loadSponsors()
+            } catch {
+              data = createDefaultSponsorsDoc()
+            }
+          } else {
+            throw new Error(r.message)
+          }
+        } else {
+          data = await loadSponsors()
+        }
         if (cancelled) return
-        setSavedVersion(data.version)
-        setSponsors(data.sponsors)
-        setTierImages(data.tierImages ?? {})
-        setTierLabels(data.tierLabels ?? { ...SPONSOR_TIER_LABELS })
-        setBaselineJson(
-          JSON.stringify({
-            sponsors: data.sponsors,
-            tierImages: data.tierImages ?? {},
-            tierLabels: data.tierLabels ?? { ...SPONSOR_TIER_LABELS },
-          }),
-        )
+        applySponsorsFromDoc(data)
         setStatus('ready')
       } catch (e) {
         if (cancelled) return
@@ -131,6 +155,7 @@ export default function SponsorsEditor() {
       const result = await uploadSponsorLogo(token, file)
       if (result.ok) {
         updateSponsor(sponsorId, { logoUrl: result.publicUrl })
+        setAddHint('Logo uploaded. Click “Save Sponsors” below to publish it on the site.')
       } else {
         setSaveNotice({ kind: 'error', message: result.message })
       }
@@ -152,6 +177,7 @@ export default function SponsorsEditor() {
       const result = await uploadSponsorLogo(token, file)
       if (result.ok) {
         setTierImages((prev) => ({ ...prev, [tier]: result.publicUrl }))
+        setAddHint('Image uploaded. Click “Save Sponsors” below to publish it on the site.')
       } else {
         setSaveNotice({ kind: 'error', message: result.message })
       }
@@ -175,17 +201,28 @@ export default function SponsorsEditor() {
     try {
       const result = await saveSponsorsContent(token, doc)
       if (result.ok) {
-        setSavedVersion(nextVersion)
-        setSponsors(doc.sponsors)
-        setTierImages(doc.tierImages)
-        setTierLabels(doc.tierLabels)
-        setBaselineJson(
-          JSON.stringify({
-            sponsors: doc.sponsors,
-            tierImages: doc.tierImages,
-            tierLabels: doc.tierLabels,
-          }),
-        )
+        if (isAdminAuthConfigured()) {
+          const fresh = await fetchSponsorsForAdmin(token)
+          if (fresh.ok) {
+            applySponsorsFromDoc(fresh.doc)
+          } else {
+            applySponsorsFromDoc(doc)
+            if (fresh.notFound) {
+              setSaveNotice({
+                kind: 'error',
+                message: 'Save succeeded, but the CMS file could not be re-read. Try refreshing the page.',
+              })
+              return
+            }
+            setSaveNotice({
+              kind: 'error',
+              message: `Save may have worked, but re-load failed: ${fresh.message}`,
+            })
+            return
+          }
+        } else {
+          applySponsorsFromDoc(doc)
+        }
         setSaveNotice({ kind: 'success' })
       } else {
         setSaveNotice({ kind: 'error', message: result.message })

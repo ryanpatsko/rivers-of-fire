@@ -29,6 +29,39 @@
   }
 }
 
+/* Fewer than 4 partners: same column widths as .grid, but the row is centered (not left-aligned in the grid). */
+.gridSparse {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.15rem 1.15rem;
+  width: 100%;
+}
+
+.gridSparse .card,
+.gridSparse .cardStatic {
+  box-sizing: border-box;
+  min-width: 0;
+  flex: 0 1 calc(50% - 0.575rem);
+  max-width: calc(50% - 0.575rem);
+}
+
+@media (min-width: 520px) {
+  .gridSparse .card,
+  .gridSparse .cardStatic {
+    flex: 0 1 calc(33.333% - 0.8rem);
+    max-width: calc(33.333% - 0.8rem);
+  }
+}
+
+@media (min-width: 800px) {
+  .gridSparse .card,
+  .gridSparse .cardStatic {
+    flex: 0 1 calc(25% - 1.0125rem);
+    max-width: calc(25% - 1.0125rem);
+  }
+}
+
 .card,
 .cardStatic {
   display: flex;

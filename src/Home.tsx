@@ -430,7 +430,7 @@ export default function Home() {
               </h2>
               <CmsHtml html={g.sponsorsLeadHtml} className="siteContentHtmlSectionLead" />
             </div>
-            <div className={styles.vendorStrip}>
+            <div className={`${styles.vendorStrip} ${styles.vendorStripSponsors}`}>
               {sponsorGroups.length === 0 ? (
                 <p className={styles.sponsorsEmpty}>{g.sponsorsEmpty}</p>
               ) : (
@@ -457,7 +457,12 @@ export default function Home() {
                           {sponsorsDoc.tierLabels[tier]}
                         </span>
                       </h3>
-                      <PartnerGrid partners={partners} emptyMessage={g.sponsorsEmpty} />
+                      <PartnerGrid
+                        partners={partners}
+                        emptyMessage={g.sponsorsEmpty}
+                        showMissingLogoPlaceholder={false}
+                        centerIfSparse
+                      />
                     </div>
                   )
                 })

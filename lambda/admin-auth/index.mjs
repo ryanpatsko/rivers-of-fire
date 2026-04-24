@@ -1,5 +1,5 @@
 /**
- * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT), /vendors (PUT), /vendor-logo (POST), /sponsors (PUT), /sponsor-logo (POST), /events (PUT), /event-logo (POST).
+ * Node 20+ Lambda + Function URL (auth NONE). JWT for /verify, /site-content (PUT), /vendors (PUT), /vendor-logo (POST), /sponsors (GET+PUT), /sponsor-logo (POST), /events (PUT), /event-logo (POST).
  *
  * Env:
  *   ADMIN_PASSWORD, ADMIN_SESSION_SECRET
@@ -12,13 +12,13 @@
  *   CMS_S3_EVENTS_KEY — optional, default events.json
  *   CMS_S3_EVENT_LOGOS_PREFIX — optional, default event-logos/ (trailing slash ok)
  *
- * IAM: s3:PutObject on site key, vendors/sponsors/events JSON, *-logos/* prefixes (and public GetObject via bucket policy for reads).
+ * IAM: s3:PutObject on site key, vendors/sponsors/events JSON, *-logos/*; s3:GetObject on sponsors.json (and other CMS JSON) for admin GET routes (and public read via bucket policy).
  *
  * CORS: configure only on the Lambda Function URL in AWS.
  */
 
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const SESSION_HOURS = 24
 
@@ -290,6 +290,24 @@ function s3PutErrorResponse(err) {
   })
 }
 
+function s3GetErrorResponse(err) {
+  console.error('GetObject failed', err)
+  const name = err?.name ?? err?.Code ?? ''
+  const msg = String(err?.message ?? '')
+  if (name === 'AccessDenied' || msg.includes('Access Denied')) {
+    return response(500, {
+      error:
+        'S3 GetObject denied. On the Lambda execution role, allow s3:GetObject on CMS JSON keys (e.g. sponsors.json per CMS_S3_SPONSORS_KEY).',
+    })
+  }
+  if (name === 'NoSuchBucket' || msg.includes('NoSuchBucket')) {
+    return response(500, { error: 'S3 bucket not found. Check the CMS_S3_BUCKET environment variable.' })
+  }
+  return response(500, {
+    error: 'S3 read failed. Open CloudWatch → Log groups → this function → latest log stream for details.',
+  })
+}
+
 function validateSiteContent(body) {
   if (!body || typeof body !== 'object') return false
   if (typeof body.version !== 'number') return false
@@ -380,6 +398,7 @@ export async function handler(event) {
   const isSaveVendors = method === 'PUT' && (path === '/vendors' || path.endsWith('/vendors'))
   const isVendorLogo =
     method === 'POST' && (path === '/vendor-logo' || path.endsWith('/vendor-logo'))
+  const isReadSponsors = method === 'GET' && (path === '/sponsors' || path.endsWith('/sponsors'))
   const isSaveSponsors = method === 'PUT' && (path === '/sponsors' || path.endsWith('/sponsors'))
   const isSponsorLogo =
     method === 'POST' && (path === '/sponsor-logo' || path.endsWith('/sponsor-logo'))
@@ -410,6 +429,42 @@ export async function handler(event) {
       return response(401, { error: 'Unauthorized' })
     }
     return response(200, { ok: true })
+  }
+
+  if (isReadSponsors) {
+    const token = bearerToken(event)
+    if (!token || !verifyJwt(token, sessionSecret)) {
+      return response(401, { error: 'Unauthorized' })
+    }
+    const bucket = process.env.CMS_S3_BUCKET ?? ''
+    const key = process.env.CMS_S3_SPONSORS_KEY || 'sponsors.json'
+    if (!bucket) {
+      return response(500, { error: 'CMS_S3_BUCKET not set' })
+    }
+    try {
+      const out = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+      const bodyText = await out.Body.transformToString('utf-8')
+      let parsed
+      try {
+        parsed = JSON.parse(bodyText)
+      } catch {
+        return response(500, { error: 'sponsors.json is not valid JSON' })
+      }
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+        body: JSON.stringify(parsed),
+      }
+    } catch (err) {
+      const name = err?.name ?? err?.Code ?? ''
+      if (name === 'NoSuchKey' || name === 'NotFound') {
+        return response(404, { error: 'sponsors.json not found in bucket' })
+      }
+      return s3GetErrorResponse(err)
+    }
   }
 
   if (isSaveContent) {
