@@ -113,19 +113,15 @@ function normalizeTierImages(raw: unknown): SponsorTierImages {
 }
 
 export function createDefaultSponsorsDoc(): SponsorsDoc {
-  return normalizeSponsorsDoc(JSON.parse(JSON.stringify(defaultDoc)), 0)
+  return normalizeSponsorsDoc(JSON.parse(JSON.stringify(defaultDoc)))
 }
 
-export function normalizeSponsorsDoc(input: unknown, depth = 0): SponsorsDoc {
-  const base = JSON.parse(JSON.stringify(defaultDoc)) as Record<string, unknown>
-  if (depth > 4) {
+export function normalizeSponsorsDoc(input: unknown): SponsorsDoc {
+  if (!input || typeof input !== 'object') {
     return { version: 1, tierLabels: defaultTierLabels(), tierImages: {}, sponsors: [] }
   }
-  if (!input || typeof input !== 'object') {
-    return normalizeSponsorsDoc(base, depth + 1)
-  }
   const o = input as Record<string, unknown>
-  const version = typeof o.version === 'number' ? o.version : Number(base.version) || 1
+  const version = typeof o.version === 'number' ? o.version : 1
   const tierLabels = normalizeTierLabels(o.tierLabels)
   const tierImages = normalizeTierImages(o.tierImages)
   const rawList = Array.isArray(o.sponsors) ? o.sponsors : []
@@ -141,9 +137,6 @@ export function normalizeSponsorsDoc(input: unknown, depth = 0): SponsorsDoc {
     const sortOrder = typeof r.sortOrder === 'number' && Number.isFinite(r.sortOrder) ? r.sortOrder : 0
     const tier = parseTier(r.tier)
     sponsors.push({ id, name: name || 'Sponsor', websiteUrl, logoUrl, sortOrder, tier })
-  }
-  if (sponsors.length === 0) {
-    return normalizeSponsorsDoc(base, depth + 1)
   }
   return { version, tierLabels, tierImages, sponsors }
 }
@@ -192,6 +185,29 @@ export function sponsorsToPartners(list: SponsorRecord[]): Partner[] {
 export type SponsorTierGroup = {
   tier: SponsorTierId
   partners: Partner[]
+}
+
+/** Names (normalised) that indicate a placeholder / not-yet-confirmed sponsor. */
+const TBA_NAMES = new Set(['tba', 'tbd', 'tobeannounced', 'tobedetermined', 'tobeconfirmed'])
+
+function isTbaName(name: string): boolean {
+  return TBA_NAMES.has(name.trim().toLowerCase().replace(/[\s.]+/g, ''))
+}
+
+/**
+ * Returns all confirmed Carolina Reaper–tier sponsors (not TBA/TBD etc.),
+ * sorted by sortOrder then name — used for the featured sponsor rails.
+ */
+export function featuredCarolinaReaperSponsors(doc: SponsorsDoc): Partner[] {
+  return doc.sponsors
+    .filter((s) => s.tier === 'carolinaReaper' && !isTbaName(s.name))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      ...(s.websiteUrl ? { websiteUrl: s.websiteUrl } : {}),
+      ...(s.logoUrl ? { logoSrc: s.logoUrl } : {}),
+    }))
 }
 
 /** Public site: tiers with at least one sponsor, highest tier first. */

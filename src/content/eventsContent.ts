@@ -111,10 +111,9 @@ function normalizeEventLogoLinkUrl(logoUrl: string, raw: unknown): string {
 }
 
 export function normalizeEventsDoc(input: unknown): EventsDoc {
-  const def = createDefaultEventsDoc()
-  if (!input || typeof input !== 'object') return def
+  if (!input || typeof input !== 'object') return { version: 1, events: [] }
   const o = input as Record<string, unknown>
-  const version = typeof o.version === 'number' ? o.version : def.version
+  const version = typeof o.version === 'number' ? o.version : 1
   const rawList = Array.isArray(o.events) ? o.events : []
   const events: EventRecord[] = []
   for (const row of rawList) {
@@ -153,7 +152,6 @@ export function normalizeEventsDoc(input: unknown): EventsDoc {
       jumpLinkLabel,
     })
   }
-  if (events.length === 0) return def
   return { version, events }
 }
 

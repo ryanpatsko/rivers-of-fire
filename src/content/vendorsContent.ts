@@ -32,10 +32,9 @@ export function createDefaultVendorsDoc(): VendorsDoc {
 }
 
 export function normalizeVendorsDoc(input: unknown): VendorsDoc {
-  const def = createDefaultVendorsDoc()
-  if (!input || typeof input !== 'object') return def
+  if (!input || typeof input !== 'object') return { version: 1, vendors: [] }
   const o = input as Record<string, unknown>
-  const version = typeof o.version === 'number' ? o.version : def.version
+  const version = typeof o.version === 'number' ? o.version : 1
   const rawList = Array.isArray(o.vendors) ? o.vendors : []
   const vendors: VendorRecord[] = []
   for (const row of rawList) {
@@ -50,7 +49,6 @@ export function normalizeVendorsDoc(input: unknown): VendorsDoc {
     const sortOrder = typeof r.sortOrder === 'number' && Number.isFinite(r.sortOrder) ? r.sortOrder : 0
     vendors.push({ id, name: name || 'Vendor', websiteUrl, logoUrl, type, sortOrder })
   }
-  if (vendors.length === 0) return def
   return { version, vendors }
 }
 

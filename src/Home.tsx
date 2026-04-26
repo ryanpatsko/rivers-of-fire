@@ -1,23 +1,25 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import {
-  createDefaultEventsDoc,
   eventsForFriday,
   eventsForSaturday,
   loadEvents,
   toEventCardModel,
   type EventCardModel,
+  type EventsDoc,
 } from './content/eventsContent'
-import { createDefaultSiteContent, loadSiteContent } from './content/siteContent'
+import { loadSiteContent, type SiteContent } from './content/siteContent'
 import {
-  createDefaultSponsorsDoc,
+  featuredCarolinaReaperSponsors,
   loadSponsors,
   sponsorsGroupedByTier,
   tierImageOrEmoji,
+  type SponsorsDoc,
 } from './content/sponsorsContent'
+import type { Partner } from './partnersData'
 import {
-  createDefaultVendorsDoc,
   loadVendors,
   vendorsToPartners,
+  type VendorsDoc,
 } from './content/vendorsContent'
 import { PartnerGrid } from './PartnerGrid'
 import { ScrollScoville } from './ScrollScoville'
@@ -194,11 +196,42 @@ function EventCard({
   )
 }
 
+function FeaturedSponsorRail({ sponsor }: { sponsor: Partner }) {
+  const inner = (
+    <div className={styles.featuredSponsorCard}>
+      <p className={styles.featuredSponsorBadge}>Featured Sponsor</p>
+      {sponsor.logoSrc ? (
+        <img
+          className={styles.featuredSponsorLogo}
+          src={sponsor.logoSrc}
+          alt=""
+          decoding="async"
+        />
+      ) : null}
+      <p className={styles.featuredSponsorName}>{sponsor.name}</p>
+    </div>
+  )
+  if (sponsor.websiteUrl) {
+    return (
+      <a
+        className={styles.featuredSponsorLink}
+        href={sponsor.websiteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${sponsor.name} — visit website (opens in new tab)`}
+      >
+        {inner}
+      </a>
+    )
+  }
+  return <div className={styles.featuredSponsorLink}>{inner}</div>
+}
+
 export default function Home() {
-  const [site, setSite] = useState(createDefaultSiteContent)
-  const [vendorsDoc, setVendorsDoc] = useState(createDefaultVendorsDoc)
-  const [sponsorsDoc, setSponsorsDoc] = useState(createDefaultSponsorsDoc)
-  const [eventsDoc, setEventsDoc] = useState(createDefaultEventsDoc)
+  const [site, setSite] = useState<SiteContent | null>(null)
+  const [vendorsDoc, setVendorsDoc] = useState<VendorsDoc | null>(null)
+  const [sponsorsDoc, setSponsorsDoc] = useState<SponsorsDoc | null>(null)
+  const [eventsDoc, setEventsDoc] = useState<EventsDoc | null>(null)
 
   useEffect(() => {
     void loadSiteContent().then(setSite).catch(() => {})
@@ -216,15 +249,18 @@ export default function Home() {
     void loadEvents().then(setEventsDoc).catch(() => {})
   }, [])
 
-  const fridayEvents = eventsForFriday(eventsDoc.events).map(toEventCardModel)
-  const saturdayEvents = eventsForSaturday(eventsDoc.events).map(toEventCardModel)
+  const fridayEvents = eventsDoc ? eventsForFriday(eventsDoc.events).map(toEventCardModel) : []
+  const saturdayEvents = eventsDoc ? eventsForSaturday(eventsDoc.events).map(toEventCardModel) : []
 
-  const hotSauceVendors = vendorsToPartners(vendorsDoc.vendors, 'hotSauce')
-  const otherVendors = vendorsToPartners(vendorsDoc.vendors, 'other')
-  const foodTruckVendors = vendorsToPartners(vendorsDoc.vendors, 'foodTruck')
-  const sponsorGroups = sponsorsGroupedByTier(sponsorsDoc)
+  const hotSauceVendors = vendorsDoc ? vendorsToPartners(vendorsDoc.vendors, 'hotSauce') : []
+  const otherVendors = vendorsDoc ? vendorsToPartners(vendorsDoc.vendors, 'other') : []
+  const foodTruckVendors = vendorsDoc ? vendorsToPartners(vendorsDoc.vendors, 'foodTruck') : []
+  const sponsorGroups = sponsorsDoc ? sponsorsGroupedByTier(sponsorsDoc) : []
+  const featuredSponsors = sponsorsDoc ? featuredCarolinaReaperSponsors(sponsorsDoc) : []
+  const featuredLeft = featuredSponsors.filter((_, i) => i % 2 === 0)
+  const featuredRight = featuredSponsors.filter((_, i) => i % 2 === 1)
 
-  const g = site.general
+  const g = site?.general
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
@@ -233,9 +269,11 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <ScrollScoville />
-      <a className={styles.skipLink} href="#main">
-        {g.skipLinkText}
-      </a>
+      {g && (
+        <a className={styles.skipLink} href="#main">
+          {g.skipLinkText}
+        </a>
+      )}
 
       <div className={styles.parallaxWrap} aria-hidden="true">
         <div className={styles.parallaxBg} />
@@ -272,6 +310,7 @@ export default function Home() {
         </div>
       </div>
 
+      {g && (
       <div className={styles.content}>
         <header className={styles.hero}>
           <HeroBackdropVideo src={g.recapVideoPath} />
@@ -342,43 +381,60 @@ export default function Home() {
         <main id="main">
           <section className={styles.section} aria-labelledby="events-heading">
             <SectionBgSpecks />
-            <div className={styles.sectionHeader}>
+            <div className={`${styles.sectionHeader} ${styles.sectionHeaderTitleOnly}`}>
               <p className={styles.sectionKicker}>{g.scheduleKicker}</p>
               <h2 id="events-heading" className={styles.sectionTitle}>
                 {g.scheduleTitle}
               </h2>
-              <CmsHtml html={g.scheduleLeadHtml} className="siteContentHtmlSectionLead" />
-              <CmsHtml html={g.scheduleFollowHtml} className="siteContentHtmlSectionLead" />
             </div>
+            <div className={featuredSponsors.length > 0 ? styles.scheduleRailLayout : undefined}>
+              {featuredLeft.length > 0 && (
+                <div className={styles.scheduleRailLeft}>
+                  {featuredLeft.map((s) => (
+                    <FeaturedSponsorRail key={s.id} sponsor={s} />
+                  ))}
+                </div>
+              )}
+              <div>
+                <CmsHtml html={g.scheduleLeadHtml} className="siteContentHtmlSectionLead" />
+                <CmsHtml html={g.scheduleFollowHtml} className="siteContentHtmlSectionLead" />
+                <div className={styles.dayBlock}>
+                  <h3 className={styles.dayHeading}>{g.dayFridayHeading}</h3>
+                  <CmsHtml html={g.dayFridaySubHtml} className="siteContentHtmlDaySub" />
+                  <div className={styles.eventsGrid}>
+                    {fridayEvents.map((event, i) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        flipFromRight={i % 2 === 1}
+                        flipStaggerMs={i * 55}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-            <div className={styles.dayBlock}>
-              <h3 className={styles.dayHeading}>{g.dayFridayHeading}</h3>
-              <CmsHtml html={g.dayFridaySubHtml} className="siteContentHtmlDaySub" />
-              <div className={styles.eventsGrid}>
-                {fridayEvents.map((event, i) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    flipFromRight={i % 2 === 1}
-                    flipStaggerMs={i * 55}
-                  />
-                ))}
+                <div className={styles.dayBlock}>
+                  <h3 className={styles.dayHeading}>{g.daySaturdayHeading}</h3>
+                  <CmsHtml html={g.daySaturdaySubHtml} className="siteContentHtmlDaySub" />
+                  <div className={styles.eventsGrid}>
+                    {saturdayEvents.map((event, i) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        flipFromRight={i % 2 === 1}
+                        flipStaggerMs={i * 48}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className={styles.dayBlock}>
-              <h3 className={styles.dayHeading}>{g.daySaturdayHeading}</h3>
-              <CmsHtml html={g.daySaturdaySubHtml} className="siteContentHtmlDaySub" />
-              <div className={styles.eventsGrid}>
-                {saturdayEvents.map((event, i) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    flipFromRight={i % 2 === 1}
-                    flipStaggerMs={i * 48}
-                  />
-                ))}
-              </div>
+              {featuredLeft.length > 0 && (
+                <div className={styles.scheduleRailRight}>
+                  {featuredRight.map((s) => (
+                    <FeaturedSponsorRail key={s.id} sponsor={s} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -532,6 +588,7 @@ export default function Home() {
           </p>
         </footer>
       </div>
+      )}
     </div>
   )
 }
