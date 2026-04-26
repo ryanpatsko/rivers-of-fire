@@ -491,7 +491,7 @@ export default function Home() {
                 <p className={styles.sponsorsEmpty}>{g.sponsorsEmpty}</p>
               ) : (
                 sponsorGroups.map(({ tier, partners }) => {
-                  const { imageUrl, emoji } = tierImageOrEmoji(sponsorsDoc.tierImages, tier)
+                  const { imageUrl, emoji } = tierImageOrEmoji(sponsorsDoc?.tierImages ?? {}, tier)
                   return (
                     <div key={tier}>
                       <h3 className={styles.sponsorTierHeading}>
@@ -510,7 +510,7 @@ export default function Home() {
                           )}
                         </span>
                         <span className={styles.sponsorTierHeadingTitle}>
-                          {sponsorsDoc.tierLabels[tier]}
+                          {sponsorsDoc?.tierLabels[tier]}
                         </span>
                       </h3>
                       <PartnerGrid
