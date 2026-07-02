@@ -185,6 +185,7 @@ function validateSponsorsDoc(body) {
   if (!Array.isArray(body.sponsors) || body.sponsors.length > 500) return false
   if (!validateTierImagesField(body.tierImages)) return false
   if (!validateTierLabelsField(body.tierLabels)) return false
+  if (body.hideTierLabels !== undefined && typeof body.hideTierLabels !== 'boolean') return false
   return body.sponsors.every(validateSponsor)
 }
 
@@ -590,10 +591,12 @@ export async function handler(event) {
         if (t) tierLabels[tid] = t
       }
     }
+    const hideTierLabels = body.hideTierLabels === true
     const normalized = {
       version,
       tierLabels,
       tierImages,
+      hideTierLabels,
       sponsors: body.sponsors.map((s) => ({
         id: s.id,
         name: String(s.name).trim(),

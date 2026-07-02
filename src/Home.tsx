@@ -487,7 +487,14 @@ export default function Home() {
               <CmsHtml html={g.sponsorsLeadHtml} className="siteContentHtmlSectionLead" />
             </div>
             <div className={`${styles.vendorStrip} ${styles.vendorStripSponsors}`}>
-              {sponsorGroups.length === 0 ? (
+              {sponsorsDoc?.hideTierLabels ? (
+                <PartnerGrid
+                  partners={sponsorGroups.flatMap(({ partners }) => partners)}
+                  emptyMessage={g.sponsorsEmpty}
+                  showMissingLogoPlaceholder={false}
+                  centerIfSparse
+                />
+              ) : sponsorGroups.length === 0 ? (
                 <p className={styles.sponsorsEmpty}>{g.sponsorsEmpty}</p>
               ) : (
                 sponsorGroups.map(({ tier, partners }) => {

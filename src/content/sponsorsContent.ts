@@ -43,6 +43,8 @@ export type SponsorsDoc = {
   tierLabels: SponsorTierLabels
   /** Optional image per tier (HTTPS URL). If unset, the pepper emoji is used on the public site. */
   tierImages: SponsorTierImages
+  /** When true, sponsor level names/icons are hidden on the public site; all sponsors show in one flat grid. */
+  hideTierLabels?: boolean
   sponsors: SponsorRecord[]
 }
 
@@ -138,13 +140,15 @@ export function normalizeSponsorsDoc(input: unknown): SponsorsDoc {
     const tier = parseTier(r.tier)
     sponsors.push({ id, name: name || 'Sponsor', websiteUrl, logoUrl, sortOrder, tier })
   }
-  return { version, tierLabels, tierImages, sponsors }
+  const hideTierLabels = o.hideTierLabels === true
+  return { version, tierLabels, tierImages, hideTierLabels, sponsors }
 }
 
 export function sanitizeSponsorsForSave(input: SponsorsDoc): SponsorsDoc {
   const version = Number.isFinite(input.version) ? Math.max(1, Math.floor(input.version)) : 1
   const tierLabels = normalizeTierLabels(input.tierLabels)
   const tierImages = normalizeTierImages(input.tierImages)
+  const hideTierLabels = input.hideTierLabels === true
   const sponsors: SponsorRecord[] = []
   for (const r of input.sponsors) {
     if (!r || typeof r.id !== 'string' || !ID_RE.test(r.id) || r.id.length > 64) continue
@@ -159,7 +163,7 @@ export function sanitizeSponsorsForSave(input: SponsorsDoc): SponsorsDoc {
     const tier = parseTier(r.tier)
     sponsors.push({ id: r.id, name, websiteUrl, logoUrl, sortOrder, tier })
   }
-  return { version, tierLabels, tierImages, sponsors }
+  return { version, tierLabels, tierImages, hideTierLabels, sponsors }
 }
 
 export async function loadSponsors(): Promise<SponsorsDoc> {

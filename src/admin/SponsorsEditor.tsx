@@ -44,6 +44,7 @@ export default function SponsorsEditor() {
   const [sponsors, setSponsors] = useState<SponsorRecord[]>([])
   const [tierImages, setTierImages] = useState<SponsorTierImages>({})
   const [tierLabels, setTierLabels] = useState<SponsorTierLabels>(() => ({ ...SPONSOR_TIER_LABELS }))
+  const [hideTierLabels, setHideTierLabels] = useState(false)
   const [baselineJson, setBaselineJson] = useState<string | null>(null)
   const [saveNotice, setSaveNotice] = useState<SaveNotice | null>(null)
   const [addHint, setAddHint] = useState<string | null>(null)
@@ -56,19 +57,21 @@ export default function SponsorsEditor() {
     setSponsors(data.sponsors)
     setTierImages(data.tierImages ?? {})
     setTierLabels(data.tierLabels ?? { ...SPONSOR_TIER_LABELS })
+    setHideTierLabels(data.hideTierLabels ?? false)
     setBaselineJson(
       JSON.stringify({
         sponsors: data.sponsors,
         tierImages: data.tierImages ?? {},
         tierLabels: data.tierLabels ?? { ...SPONSOR_TIER_LABELS },
+        hideTierLabels: data.hideTierLabels ?? false,
       }),
     )
   }
 
   const isDirty = useMemo(() => {
     if (baselineJson === null) return false
-    return JSON.stringify({ sponsors, tierImages, tierLabels }) !== baselineJson
-  }, [sponsors, tierImages, tierLabels, baselineJson])
+    return JSON.stringify({ sponsors, tierImages, tierLabels, hideTierLabels }) !== baselineJson
+  }, [sponsors, tierImages, tierLabels, hideTierLabels, baselineJson])
 
   useEffect(() => {
     if (isDirty) {
@@ -196,7 +199,7 @@ export default function SponsorsEditor() {
       return
     }
     const nextVersion = savedVersion + 1
-    const doc = sanitizeSponsorsForSave({ version: nextVersion, sponsors, tierImages, tierLabels })
+    const doc = sanitizeSponsorsForSave({ version: nextVersion, sponsors, tierImages, tierLabels, hideTierLabels })
     setSaving(true)
     try {
       const result = await saveSponsorsContent(token, doc)
@@ -276,6 +279,14 @@ export default function SponsorsEditor() {
         <h3 id="sponsor-tier-images-heading" className={styles.typeTitle}>
           Sponsor level images
         </h3>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={hideTierLabels}
+            onChange={(ev) => setHideTierLabels(ev.target.checked)}
+          />
+          Hide sponsor level names &amp; icons on the public site (show all sponsors in one grid)
+        </label>
         <p className={styles.addVendorHint} style={{ marginTop: 0 }}>
           Optional image for each level. If empty, the site uses the pepper icon (
           {SPONSOR_TIER_DEFAULT_ICON_EMOJI}).
