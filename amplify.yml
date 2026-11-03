@@ -1,5 +1,5 @@
 # SPA: add a rewrite in Amplify Console → Hosting → Rewrites and redirects so client routes work:
-#   Source: </^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp|webmanifest)$)([^.]+$)/>
+#   Source: </^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp|webmanifest|mp4|webm)$)([^.]+$)/>
 #   Target: /index.html
 #   Type: 200 (Rewrite)
 #

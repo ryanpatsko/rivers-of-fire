@@ -47,14 +47,49 @@ function SectionBgSpecks({ count = 16 }: { count?: number }) {
   )
 }
 
-/** Muted loop behind the hero; omitted when the user prefers reduced motion. */
+/**
+ * The 2025 recap master is 4K, 32s, and 226 MB. It used to be the hero
+ * background with `preload="auto"`, so every homepage view pulled it from
+ * Amplify. These are the compressed, silent loops shipped in `assets/`.
+ */
+const LEGACY_RECAP_VIDEO = '/rivers_of_file_festival_recap_2025.mp4'
+const HERO_VIDEO_DESKTOP = '/hero-bg.mp4'
+const HERO_VIDEO_MOBILE = '/hero-bg-sm.mp4'
+const HERO_POSTER = '/pittsburgh-night-view.jpg'
+
+function heroVideoSources(cmsPath: string): { desktop: string; mobile: string } {
+  const path = cmsPath.trim()
+  if (path === '' || path === LEGACY_RECAP_VIDEO || path === HERO_VIDEO_DESKTOP) {
+    return { desktop: HERO_VIDEO_DESKTOP, mobile: HERO_VIDEO_MOBILE }
+  }
+  return { desktop: path, mobile: path }
+}
+
+function connectionSkipsHeroVideo(): boolean {
+  const conn = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }
+  ).connection
+  if (!conn) return false
+  if (conn.saveData) return true
+  return conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g'
+}
+
+/** Muted loop behind the hero. Skipped for reduced motion and very slow links. */
 function HeroBackdropVideo({ src }: { src: string }) {
+  const rootRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const sources = heroVideoSources(src)
   const [reduceMotion, setReduceMotion] = useState(
     () =>
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   )
+  const [skipForConnection, setSkipForConnection] = useState(
+    () => typeof window !== 'undefined' && connectionSkipsHeroVideo(),
+  )
+  const [started, setStarted] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -64,33 +99,93 @@ function HeroBackdropVideo({ src }: { src: string }) {
   }, [])
 
   useEffect(() => {
-    if (reduceMotion) return
-    const v = videoRef.current
-    if (!v) return
-    const tryPlay = () => {
-      void v.play().catch(() => {})
-    }
-    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) tryPlay()
-    else v.addEventListener('canplay', tryPlay, { once: true })
-    return () => v.removeEventListener('canplay', tryPlay)
-  }, [reduceMotion, src])
+    setSkipForConnection(connectionSkipsHeroVideo())
+  }, [])
 
-  if (reduceMotion) return null
+  useEffect(() => {
+    if (reduceMotion || skipForConnection || started) return
+    const root = rootRef.current
+    if (!root) return
+
+    let inView = false
+    let timer = 0
+    const arm = () => {
+      window.clearTimeout(timer)
+      if (!inView || document.visibilityState !== 'visible') return
+      timer = window.setTimeout(() => {
+        if (inView && document.visibilityState === 'visible') setStarted(true)
+      }, 1200)
+    }
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        inView = !!entry?.isIntersecting
+        arm()
+      },
+      { threshold: 0.2 },
+    )
+    obs.observe(root)
+    document.addEventListener('visibilitychange', arm)
+    return () => {
+      window.clearTimeout(timer)
+      obs.disconnect()
+      document.removeEventListener('visibilitychange', arm)
+    }
+  }, [reduceMotion, skipForConnection, started])
+
+  useEffect(() => {
+    if (!started) return
+    const v = videoRef.current
+    const root = rootRef.current
+    if (!v || !root) return
+
+    let inView = true
+    const sync = () => {
+      const shouldPlay = inView && document.visibilityState === 'visible'
+      if (shouldPlay) void v.play().catch(() => {})
+      else v.pause()
+    }
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        inView = !!entry?.isIntersecting
+        sync()
+      },
+      { threshold: 0.15 },
+    )
+    obs.observe(root)
+    document.addEventListener('visibilitychange', sync)
+    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) sync()
+    else v.addEventListener('canplay', sync, { once: true })
+    return () => {
+      obs.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+      v.removeEventListener('canplay', sync)
+    }
+  }, [started, sources.desktop, sources.mobile])
+
+  if (reduceMotion || skipForConnection) return null
 
   return (
-    <div className={styles.heroVideoLayer} aria-hidden="true">
-      <video
-        ref={videoRef}
-        className={styles.heroVideo}
-        src={src}
-        muted
-        loop
-        playsInline
-        autoPlay
-        preload="auto"
-        aria-hidden="true"
-        tabIndex={-1}
-      />
+    <div ref={rootRef} className={styles.heroVideoLayer} aria-hidden="true">
+      {started ? (
+        <video
+          ref={videoRef}
+          className={styles.heroVideo}
+          poster={HERO_POSTER}
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="none"
+          disablePictureInPicture
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <source src={sources.mobile} type="video/mp4" media="(max-width: 767px)" />
+          <source src={sources.desktop} type="video/mp4" />
+        </video>
+      ) : null}
       <div className={styles.heroVideoScrim} />
     </div>
   )

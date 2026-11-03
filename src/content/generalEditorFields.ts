@@ -80,7 +80,8 @@ const LABELS: Partial<Record<keyof SiteGeneralContent, string>> = {
   fridayWhen: 'Friday when / details',
   saturdayWhen: 'Saturday when / details',
   ticketUrl: 'Ticket / buy URL',
-  recapVideoPath: 'Recap video path (e.g. /video.mp4)',
+  recapVideoPath:
+    'Hero background video path. Use /hero-bg.mp4 (a few MB). Every homepage visit downloads this file.',
   instagramUrl: 'Instagram URL',
   facebookUrl: 'Facebook URL',
   scheduleKicker: 'Schedule section kicker',
